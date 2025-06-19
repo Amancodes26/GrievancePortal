@@ -8,17 +8,23 @@
 ->otpconstants -✅
 ->models[personalinfo]-✅
 
-devansh
-{route is also update untill now for user 
-just setup it in app.ts of root folder then check and test it 
-}
+this part is completed
 
 for admin part change - sample admin data
 }
+
+
 //grivance user part 
-//admin side ready 
-// tracking 
+//admin side ready {
+  auth
+  logic/service 
+  api 
+}
+// tracking {
+  history 
+}
 // phase - api working
+
 //last intergertaion testging
 
 
