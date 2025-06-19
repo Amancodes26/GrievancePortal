@@ -6,12 +6,17 @@ import { config } from "dotenv";
 config();
 
 const pool = new Pool({
-    user: process.env.PGUSER ,
+    user: process.env.PGUSER || 'avnadmin',
     host: process.env.PGHOST ,
-    database: process.env.PGDATABASE,
-    password: process.env.PGPASSWORD ,
-    port: Number(process.env.PGPORT) || 10184,
-    ssl: { rejectUnauthorized: false },
+    database: process.env.PGDATABASE || 'grievance',
+    password: process.env.PGPASSWORD,
+    port: Number(process.env.PGPORT) || 26066,
+    ssl: {
+        rejectUnauthorized: false,
+    },
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
 });
 
 // Simple query logging with one environment variable

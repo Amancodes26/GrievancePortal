@@ -1,107 +1,106 @@
-import { Pool } from 'pg';
+import pool from './index';
 
-// Initialize PostgreSQL connection pool
-export const db = new Pool();
+// Use the pool from index.ts instead of creating a new one
+export const db = pool;
 
 // CourseEval CRUD queries
 export const CourseEvalCrudQueries = {
-  GET_ALL: `SELECT * FROM CourseEval ORDER BY Id`,
-  GET_BY_ID: `SELECT * FROM CourseEval WHERE Id = $1`,
+  GET_ALL: `SELECT * FROM courseeval ORDER BY Id`,
+  GET_BY_ID: `SELECT * FROM courseeval WHERE Id = $1`,
   CREATE: `
-    INSERT INTO CourseEval (
+    INSERT INTO courseeval (
       CourseId, Lect, Pract, CompTypes
     ) VALUES (
       $1, $2, $3, $4
     ) RETURNING *
   `,
   UPDATE: (fields: string[]) => `
-    UPDATE CourseEval SET
+    UPDATE courseeval SET
       ${fields.map((f, i) => `${f} = $${i + 2}`).join(",\n      ")},
       UpdatedAt = (NOW() AT TIME ZONE 'Asia/Kolkata')
     WHERE Id = $1 RETURNING *
   `,
-  DELETE: `DELETE FROM CourseEval WHERE Id = $1 RETURNING *`,
+  DELETE: `DELETE FROM courseeval WHERE Id = $1 RETURNING *`,
 };
 // ProgramOptions CRUD queries
 export const ProgramOptionsCrudQueries = {
-  GET_ALL: `SELECT * FROM ProgramOptions ORDER BY Id`,
-  GET_BY_PROGRAMID_TERM_BATCH: `SELECT * FROM ProgramOptions WHERE ProgramId = $1 AND Term = $2 AND Batch = $3`,
+  GET_ALL: `SELECT * FROM programoptions ORDER BY Id`,
+  GET_BY_PROGRAMID_TERM_BATCH: `SELECT * FROM programoptions WHERE ProgramId = $1 AND Term = $2 AND Batch = $3`,
   CREATE: `
-    INSERT INTO ProgramOptions (
+    INSERT INTO programoptions (
       ProgramId, Term, Batch, GradingType
     ) VALUES (
       $1, $2, $3, $4
     ) RETURNING *
   `,
   UPDATE_BY_PROGRAMID_TERM_BATCH: (fields: string[]) => `
-    UPDATE ProgramOptions SET
+    UPDATE programoptions SET
       ${fields.map((f, i) => `${f} = $${i + 4}`).join(",\n      ")},
       UpdatedAt = (NOW() AT TIME ZONE 'Asia/Kolkata')
     WHERE ProgramId = $1 AND Term = $2 AND Batch = $3 RETURNING *
   `,
-  DELETE_BY_PROGRAMID_TERM_BATCH: `DELETE FROM ProgramOptions WHERE ProgramId = $1 AND Term = $2 AND Batch = $3 RETURNING *`,
+  DELETE_BY_PROGRAMID_TERM_BATCH: `DELETE FROM programoptions WHERE ProgramId = $1 AND Term = $2 AND Batch = $3 RETURNING *`,
 };
 
 // CourseProgram CRUD queries
 export const CourseProgramCrudQueries = {
-  GET_ALL: `SELECT * FROM CourseProgram ORDER BY Id`,
-  GET_BY_COMPOSITE_KEY: `SELECT * FROM CourseProgram WHERE ProgramId = $1 AND CourseId = $2 AND Batch = $3`,
+  GET_ALL: `SELECT * FROM courseprogram ORDER BY Id`,
+  GET_BY_COMPOSITE_KEY: `SELECT * FROM courseprogram WHERE ProgramId = $1 AND CourseId = $2 AND Batch = $3`,
   CREATE: `
-    INSERT INTO CourseProgram (
+    INSERT INTO courseprogram (
       ProgramId, CourseId, Batch, IsActive
     ) VALUES (
       $1, $2, $3, COALESCE($4, TRUE)
     ) RETURNING *
   `,
   UPDATE_BY_COMPOSITE_KEY: (fields: string[]) => `
-    UPDATE CourseProgram SET
+    UPDATE courseprogram SET
       ${fields.map((f, i) => `${f} = $${i + 4}`).join(",\n      ")},
       UpdatedAt = (NOW() AT TIME ZONE 'Asia/Kolkata')
     WHERE ProgramId = $1 AND CourseId = $2 AND Batch = $3 RETURNING *
   `,
-  DELETE_BY_COMPOSITE_KEY: `DELETE FROM CourseProgram WHERE ProgramId = $1 AND CourseId = $2 AND Batch = $3 RETURNING *`,
+  DELETE_BY_COMPOSITE_KEY: `DELETE FROM courseprogram WHERE ProgramId = $1 AND CourseId = $2 AND Batch = $3 RETURNING *`,
 };
 
 // Course CRUD queries
 export const CourseCrudQueries = {
-  GET_ALL: `SELECT * FROM Course ORDER BY CourseId`,
-  GET_BY_ID: `SELECT * FROM Course WHERE CourseId = $1`,
-  GET_BY_CODE: `SELECT * FROM Course WHERE CourseCode = $1`,
+  GET_ALL: `SELECT * FROM course ORDER BY CourseId`,
+  GET_BY_ID: `SELECT * FROM course WHERE CourseId = $1`,
+  GET_BY_CODE: `SELECT * FROM course WHERE CourseCode = $1`,
   CREATE: `
-    INSERT INTO Course (
+    INSERT INTO course (
       CourseCode, CourseName, Term, CourseType, Credit
     ) VALUES (
       $1, $2, $3, $4, $5
     ) RETURNING *
   `,
   UPDATE: (fields: string[]) => `
-    UPDATE Course SET
+    UPDATE course SET
       ${fields.map((f, i) => `${f} = $${i + 2}`).join(",\n      ")},
       UpdatedAt = (NOW() AT TIME ZONE 'Asia/Kolkata')
     WHERE CourseId = $1 RETURNING *
   `,
-  DELETE: `DELETE FROM Course WHERE CourseId = $1 RETURNING *`,
+  DELETE: `DELETE FROM course WHERE CourseId = $1 RETURNING *`,
 };
 
 // AcademicInfo CRUD queries
 export const AcademicInfoCrudQueries = {
-  GET_ALL: `SELECT * FROM AcademicInfo ORDER BY Id`,
-  GET_BY_ROLLNO_AND_TERM: `SELECT * FROM AcademicInfo WHERE RollNo = $1 AND Term = $2`,
+  GET_ALL: `SELECT * FROM academicinfo ORDER BY Id`,
+  GET_BY_ROLLNO_AND_TERM: `SELECT * FROM academicinfo WHERE RollNo = $1 AND Term = $2`,
   CREATE: `
-    INSERT INTO AcademicInfo (
+    INSERT INTO academicinfo (
       RollNo, ProgramId, AcademicYear, Term, CampusId, Batch
     ) VALUES (
       $1, $2, $3, $4, $5, $6
     ) RETURNING *
-  `,
-  // Dynamic update: only update provided fields, never update Id
+  `,  // Dynamic update: only update provided fields, never update Id
   UPDATE_BY_ROLLNO_AND_TERM: (fields: string[]) => `
-    UPDATE AcademicInfo SET
+    UPDATE academicinfo SET
       ${fields.map((f, i) => `${f} = $${i + 3}`).join(",\n      ")},
       UpdatedAt = (NOW() AT TIME ZONE 'Asia/Kolkata')
     WHERE RollNo = $1 AND Term = $2 RETURNING *
   `,
-  DELETE: `DELETE FROM AcademicInfo WHERE Id = $1 RETURNING *`,
+  DELETE: `DELETE FROM academicinfo WHERE Id = $1 RETURNING *`,
 };
 // ProgramInfo CRUD queries
 export const ProgramInfoCrudQueries = {
@@ -784,91 +783,91 @@ export const MarksValidationQueries = {
 // Grievance CRUD queries
 export const GrievanceQueries = {
   CREATE: `
-    INSERT INTO Grievance (
+    INSERT INTO grievance (
       Issuse_Id, RollNo, Campus, Subject, Description, Issuse_type, Status, Attachment
     ) VALUES (
       $1, $2, $3, $4, $5, $6, COALESCE($7, 'pending'), $8
     ) RETURNING *
   `,
   GET_BY_ID: `
-    SELECT * FROM Grievance WHERE id = $1
+    SELECT * FROM grievance WHERE id = $1
   `,
   GET_BY_ROLLNO: `
-    SELECT * FROM Grievance WHERE RollNo = $1 ORDER BY Date DESC
+    SELECT * FROM grievance WHERE RollNo = $1 ORDER BY Date DESC
   `,
   GET_ALL: `
-    SELECT * FROM Grievance ORDER BY Date DESC
+    SELECT * FROM grievance ORDER BY Date DESC
   `,
   UPDATE_STATUS: `
-    UPDATE Grievance SET Status = $1 WHERE id = $2 RETURNING *
+    UPDATE grievance SET Status = $2 WHERE id = $1 RETURNING *
   `,
   UPDATE: (fields: string[]) => `
-    UPDATE Grievance SET
+    UPDATE grievance SET
       ${fields.map((f, i) => `${f} = $${i + 2}`).join(",\n      ")}
     WHERE id = $1 RETURNING *
   `,
   DELETE: `
-    DELETE FROM Grievance WHERE id = $1 RETURNING *
+    DELETE FROM grievance WHERE id = $1 RETURNING *
   `
 };
 
 // Response CRUD queries
 export const ResponseQueries = {
   CREATE: `
-    INSERT INTO Response (
+    INSERT INTO response (
       Issuse_Id, ResponseText, ResponseBy, Status, Stage, attachment, redirect
     ) VALUES (
       $1, $2, $3, COALESCE($4, 'pending'), $5, $6, $7
     ) RETURNING *
   `,
   GET_BY_ISSUE_ID: `
-    SELECT * FROM Response WHERE Issuse_Id = $1 ORDER BY Date ASC
+    SELECT * FROM response WHERE Issuse_Id = $1 ORDER BY Date ASC
   `,
   GET_ALL: `
-    SELECT * FROM Response ORDER BY Date DESC
+    SELECT * FROM response ORDER BY Date DESC
   `,
   DELETE: `
-    DELETE FROM Response WHERE id = $1 RETURNING *
+    DELETE FROM response WHERE id = $1 RETURNING *
   `
 };
 
 // GrievanceHistory CRUD queries
 export const GrievanceHistoryQueries = {
   CREATE: `
-    INSERT INTO GrievanceHistory (
+    INSERT INTO grievancehistory (
       Issuse_Id, from_status, to_status, action_by, stage_type, Note
     ) VALUES (
       $1, $2, $3, $4, $5, $6
     ) RETURNING *
   `,
   GET_BY_ISSUE_ID: `
-    SELECT * FROM GrievanceHistory WHERE Issuse_Id = $1 ORDER BY Date ASC
+    SELECT * FROM grievancehistory WHERE Issuse_Id = $1 ORDER BY Date ASC
   `,
   GET_ALL: `
-    SELECT * FROM GrievanceHistory ORDER BY Date DESC
+    SELECT * FROM grievancehistory ORDER BY Date DESC
   `,
   DELETE: `
-    DELETE FROM GrievanceHistory WHERE Id = $1 RETURNING *
+    DELETE FROM grievancehistory WHERE Id = $1 RETURNING *
   `
 };
 
 // Attachment CRUD queries
 export const AttachmentQueries = {
   CREATE: `
-    INSERT INTO Attachment (
+    INSERT INTO attachment (
       Issuse_Id, FileName, FilePath, UploadedBy
     ) VALUES (
       $1, $2, $3, $4
     ) RETURNING *
   `,
   GET_BY_ISSUE_ID: `
-    SELECT * FROM Attachment WHERE Issuse_Id = $1 ORDER BY UploadedAt DESC
+    SELECT * FROM attachment WHERE Issuse_Id = $1 ORDER BY UploadedAt DESC
   `,
   GET_ALL: `
-    SELECT * FROM Attachment ORDER BY UploadedAt DESC
+    SELECT * FROM attachment ORDER BY UploadedAt DESC
   `,
   DELETE: `
-    DELETE FROM Attachment WHERE id = $1 RETURNING *
+    DELETE FROM attachment WHERE id = $1 RETURNING *
   `
 };
 

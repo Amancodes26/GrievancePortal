@@ -14,6 +14,7 @@ export interface PersonalInfo {
   password?: string;
   isverified?: boolean;
   admissionyear?: number;
+  role: 'STUDENT' | 'DEPT_ADMIN' | 'CAMPUS_ADMIN' | 'SUPER_ADMIN';
   le?: boolean;
   createdat?: Date;
   updatedat?: Date;

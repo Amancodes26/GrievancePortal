@@ -1,6 +1,10 @@
 -- Database initialization script for DSEU Project 2025
 
 -- Drop tables if they exist (for fresh setup)
+DROP TABLE IF EXISTS attachment CASCADE;
+DROP TABLE IF EXISTS grievancehistory CASCADE;
+DROP TABLE IF EXISTS response CASCADE;
+DROP TABLE IF EXISTS grievance CASCADE;
 DROP TABLE IF EXISTS CourseEval CASCADE;
 DROP TABLE IF EXISTS ProgramOptions CASCADE;
 DROP TABLE IF EXISTS CourseProgram CASCADE;
@@ -319,10 +323,17 @@ BEGIN
     SELECT 'Admin'::TEXT, COUNT(*) FROM Admin
     UNION ALL
     SELECT 'OTP'::TEXT, COUNT(*) FROM OTP
+    UNION ALL    SELECT 'AdminOTP'::TEXT, COUNT(*) FROM AdminOTP
     UNION ALL
-    SELECT 'AdminOTP'::TEXT, COUNT(*) FROM AdminOTP
+    SELECT 'AcademicInfo'::TEXT, COUNT(*) FROM AcademicInfo
     UNION ALL
-    SELECT 'AcademicInfo'::TEXT, COUNT(*) FROM AcademicInfo;
+    SELECT 'grievance'::TEXT, COUNT(*) FROM grievance
+    UNION ALL
+    SELECT 'response'::TEXT, COUNT(*) FROM response
+    UNION ALL
+    SELECT 'grievancehistory'::TEXT, COUNT(*) FROM grievancehistory
+    UNION ALL
+    SELECT 'attachment'::TEXT, COUNT(*) FROM attachment;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -356,8 +367,8 @@ SELECT * FROM get_table_status();
 
 -- ...existing code...
 
--- Create Grievance table
-CREATE TABLE Grievance (
+-- Create grievance table
+CREATE TABLE grievance (
    id SERIAL PRIMARY KEY,
    Issuse_Id VARCHAR(50) NOT NULL,
    RollNo VARCHAR(50) NOT NULL,
@@ -371,8 +382,8 @@ CREATE TABLE Grievance (
    CONSTRAINT fk_grievance_rollno FOREIGN KEY (RollNo) REFERENCES PersonalInfo(RollNo) ON DELETE CASCADE 
 );
 
--- Create Response table
-CREATE TABLE Response (
+-- Create response table
+CREATE TABLE response (
     id SERIAL PRIMARY KEY,
     Issuse_Id INTEGER NOT NULL,
     ResponseText TEXT NOT NULL,
@@ -383,11 +394,11 @@ CREATE TABLE Response (
     attachment TEXT,
     redirect VARCHAR(50),
     Date TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    CONSTRAINT fk_response_grievance FOREIGN KEY (Issuse_Id) REFERENCES Grievance(id) ON DELETE CASCADE
+    CONSTRAINT fk_response_grievance FOREIGN KEY (Issuse_Id) REFERENCES grievance(id) ON DELETE CASCADE
 );
 
--- Create GrievanceHistory table
-CREATE TABLE GrievanceHistory (
+-- Create grievancehistory table
+CREATE TABLE grievancehistory (
     Id SERIAL PRIMARY KEY,
     Issuse_Id INTEGER NOT NULL,
     from_status VARCHAR(50) NOT NULL,
@@ -396,11 +407,11 @@ CREATE TABLE GrievanceHistory (
     stage_type VARCHAR(50) NOT NULL,
     Note TEXT,
     DATE TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    CONSTRAINT fk_history_grievance FOREIGN KEY (Issuse_Id) REFERENCES Grievance(id) ON DELETE CASCADE
+    CONSTRAINT fk_history_grievance FOREIGN KEY (Issuse_Id) REFERENCES grievance(id) ON DELETE CASCADE
 );
 
--- Create Attachment table
-CREATE TABLE Attachment (
+-- Create attachment table
+CREATE TABLE attachment (
     id SERIAL PRIMARY KEY,
     Issuse_Id INTEGER NOT NULL,
     FileName VARCHAR(255) NOT NULL,
@@ -409,13 +420,13 @@ CREATE TABLE Attachment (
     UploadedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
     CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
     UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    CONSTRAINT fk_attachment_grievance FOREIGN KEY (Issuse_Id) REFERENCES Grievance(id) ON DELETE CASCADE
+    CONSTRAINT fk_attachment_grievance FOREIGN KEY (Issuse_Id) REFERENCES grievance(id) ON DELETE CASCADE
 );
 
 -- Create indexes for better performance
-CREATE INDEX idx_grievance_rollno ON Grievance(RollNo);
-CREATE INDEX idx_grievance_status ON Grievance(Status);
-CREATE INDEX idx_grievance_date ON Grievance(Date);
-CREATE INDEX idx_response_issueid ON Response(Issuse_Id);
-CREATE INDEX idx_history_issueid ON GrievanceHistory(Issuse_Id);
-CREATE INDEX idx_attachment_issueid ON Attachment(Issuse_Id);
+CREATE INDEX idx_grievance_rollno ON grievance(RollNo);
+CREATE INDEX idx_grievance_status ON grievance(Status);
+CREATE INDEX idx_grievance_date ON grievance(Date);
+CREATE INDEX idx_response_issueid ON response(Issuse_Id);
+CREATE INDEX idx_history_issueid ON grievancehistory(Issuse_Id);
+CREATE INDEX idx_attachment_issueid ON attachment(Issuse_Id);
