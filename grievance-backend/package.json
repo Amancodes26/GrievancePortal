@@ -14,9 +14,12 @@
   "description": "",
   "dependencies": {
     "@types/ajv": "^0.0.5",
+    "@types/bcryptjs": "^2.4.6",
     "@types/dotenv": "^6.1.1",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/nodemailer": "^6.4.17",
     "ajv": "^8.17.1",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
@@ -27,9 +30,7 @@
     "nodemailer": "^7.0.3",
     "otp-generator": "^4.0.1",
     "pg": "^8.16.0",
-    "zod": "^3.25.64",
-    "@types/jsonwebtoken": "^9.0.9",
-    "@types/bcryptjs": "^2.4.6"
+    "zod": "^3.25.64"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
