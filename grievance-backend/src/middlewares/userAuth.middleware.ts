@@ -8,6 +8,12 @@ declare global {
   namespace Express {
     interface Request {
       User?: PersonalInfo;
+      user?: {
+        rollNumber: string;
+        name: string;
+        email: string;
+        role?: string;
+      };
     }
   }
 }
@@ -68,9 +74,7 @@ export const verifyJWT = async (req: Request, res: Response, next: NextFunction)
         success: false,
       });
       return;
-    }
-
-    // Find the user associated with the token
+    }    // Find the user associated with the token
     const user = await DatabaseService.findUserByRollNumber(decoded.rollNumber);
     
     if (!user) {
@@ -80,11 +84,15 @@ export const verifyJWT = async (req: Request, res: Response, next: NextFunction)
         success: false,
       });
       return;
-    }
-
-    // Exclude sensitive information
-    const { password, ...userWithoutPassword } = user;
-    req.User = userWithoutPassword as PersonalInfo;
+    }    
+    
+    // Set user data in the format expected by controllers
+    req.user = {
+      rollNumber: user.rollno,  // Map rollno to rollNumber
+      name: user.name,
+      email: user.email,
+      role: 'STUDENT'  // Default role, can be enhanced later
+    };
 
     next();
   } catch (error: any) {
