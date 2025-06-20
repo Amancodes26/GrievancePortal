@@ -3,11 +3,29 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 
-const uploadPath = path.join(__dirname, '../../uploads/attachments');
-
-if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true });
-}
+// For Vercel compatibility - use temp directory
+const getUploadPath = () => {
+  if (process.env.VERCEL) {
+    // Use /tmp directory on Vercel
+    const tempDir = '/tmp/attachments';
+    if (!fs.existsSync(tempDir)) {
+      try {
+        fs.mkdirSync(tempDir, { recursive: true });
+      } catch (error) {
+        console.warn('Could not create upload directory:', error);
+        return '/tmp';
+      }
+    }
+    return tempDir;
+  } else {
+    // Use local uploads directory in development
+    const uploadPath = path.join(__dirname, '../../uploads/attachments');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    return uploadPath;
+  }
+};
 
 // Validate file content by checking magic numbers (file headers)
 const validateFileContent = (filePath: string, mimetype: string): boolean => {
@@ -37,6 +55,7 @@ const sanitizeFilename = (filename: string): string => {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    const uploadPath = getUploadPath();
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {

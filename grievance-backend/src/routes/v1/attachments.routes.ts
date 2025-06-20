@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import * as attachmentController from '../../controllers/grievanceAttachment.controller';
+// Use the new memory-based controller for Vercel compatibility
+import * as attachmentController from '../../controllers/grievanceAttachment.memory.controller';
 
 const router = Router();
 
@@ -7,20 +8,16 @@ const router = Router();
 // GET /api/v1/attachments/health
 router.get('/health', attachmentController.getAttachmentSystemHealth as any);
 
-// Upload attachment to grievance
+// Upload attachment to grievance (now uses memory storage + database)
 // POST /api/v1/attachments/upload
 // Body: FormData with 'attachment' file and 'issue_id', optional 'test_user_rollno'
 router.post('/upload', ...attachmentController.uploadAttachment as any);
 
 // Get all attachments for a grievance
 // GET /api/v1/attachments/grievance/:issue_id
-router.get('/grievance/:issue_id', attachmentController.getAttachmentsByIssueId as any);
+router.get('/grievance/:issue_id', attachmentController.listAttachments as any);
 
-// Get attachment metadata by ID
-// GET /api/v1/attachments/:attachment_id
-router.get('/:attachment_id', attachmentController.getAttachmentById as any);
-
-// Download attachment file
+// Download attachment file (now serves from database)
 // GET /api/v1/attachments/:attachment_id/download
 router.get('/:attachment_id/download', attachmentController.downloadAttachment as any);
 

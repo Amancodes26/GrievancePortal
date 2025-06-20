@@ -8,16 +8,28 @@ import { AttachmentQueries } from '../db/queries';
 import * as grievanceService from '../services/grievance.service';
 
 // Security configuration
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'grievances');
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ALLOWED_MIME_TYPES = ['application/pdf'];
 const ALLOWED_EXTENSIONS = ['.pdf'];
 const MAX_FILENAME_LENGTH = 100;
 
-// Ensure upload directory exists with proper permissions
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true, mode: 0o755 });
-}
+// For Vercel compatibility - use temp directory or memory storage
+const getUploadDir = () => {
+  // Try to use a writable temp directory on Vercel
+  const tempDir = process.env.VERCEL ? '/tmp/uploads' : path.join(process.cwd(), 'uploads', 'grievances');
+  
+  // Ensure upload directory exists with proper permissions
+  if (!fs.existsSync(tempDir)) {
+    try {
+      fs.mkdirSync(tempDir, { recursive: true, mode: 0o755 });
+    } catch (error) {
+      console.warn('Could not create upload directory:', error);
+      // Fallback to /tmp if available
+      return '/tmp';
+    }
+  }
+  return tempDir;
+};
 
 // Enhanced filename sanitization
 const sanitizeFilename = (filename: string): string => {
@@ -153,7 +165,8 @@ const secureFileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFi
 // Secure multer storage configuration
 const secureStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR);
+    const uploadDir = getUploadDir();
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const secureFilename = generateSecureFilename(file.originalname);
@@ -486,11 +499,9 @@ export const downloadAttachment = async (req: AuthenticatedRequest, res: Respons
         message: 'File not found on server',
         success: false
       });
-    }
-
-    // Path traversal protection
+    }    // Path traversal protection
     const resolvedFilePath = path.resolve(attachment.filepath);
-    const resolvedUploadPath = path.resolve(UPLOAD_DIR);
+    const resolvedUploadPath = path.resolve(getUploadDir());
 
     if (!resolvedFilePath.startsWith(resolvedUploadPath)) {
       console.error(`[SECURITY] Path traversal attempt detected: ${attachment.filepath}`);
@@ -745,11 +756,12 @@ export const getAttachmentById = async (req: AuthenticatedRequest, res: Response
 // Health check endpoint for attachment service
 export const getAttachmentSystemHealth = async (req: Request, res: Response) => {
   try {
+    const uploadDir = getUploadDir();
     const health = {
       upload_directory: {
-        exists: fs.existsSync(UPLOAD_DIR),
+        exists: fs.existsSync(uploadDir),
         writable: true,
-        path: UPLOAD_DIR
+        path: uploadDir
       },
       security_features: {
         pdf_validation: 'enabled',
@@ -769,7 +781,7 @@ export const getAttachmentSystemHealth = async (req: Request, res: Response) => 
 
     // Test write permission
     try {
-      const testFile = path.join(UPLOAD_DIR, '.health_check');
+      const testFile = path.join(uploadDir, '.health_check');
       fs.writeFileSync(testFile, 'test');
       fs.unlinkSync(testFile);
     } catch (error) {
