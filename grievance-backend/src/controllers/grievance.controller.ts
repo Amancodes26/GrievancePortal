@@ -12,14 +12,20 @@ export const createGrievance = async (req: Request, res: Response): Promise<void
         success: false,
       });
       return;
-    }
-    const grievanceData: Grievance = req.body;
+    }    const grievanceData: Grievance = req.body;
     const serviceData = {
-      ...grievanceData,
-      attachment: grievanceData.attachment ? String(grievanceData.attachment) : null
+      issue_id: '', // Will be set below
+      rollno: req.User.rollno,
+      campus: grievanceData.campus,
+      subject: grievanceData.subject,
+      description: grievanceData.description,
+      issue_type: grievanceData.issue_type,
+      status: 'PENDING',
+      attachment: grievanceData.attachment !== undefined ? (grievanceData.attachment ? 'true' : 'false') : null
     };
+    
     // Ensure required fields are present
-    if (!serviceData.subject || !serviceData.description || !serviceData.attachment || !req.User.rollno || !serviceData.issue_type) {
+    if (!serviceData.subject || !serviceData.description || grievanceData.attachment === undefined || grievanceData.attachment === null || !req.User.rollno || !serviceData.issue_type) {
       res.status(400).json({
         message: 'Subject, description, attachment, roll number, and issue type are required',
         success: false,
@@ -47,7 +53,7 @@ export const createGrievance = async (req: Request, res: Response): Promise<void
   }
 };
 
-//get grievance by id
+//get grievance by id with responses and history
 export const getGrievanceById = async (req: Request, res: Response, next: NextFunction) => {
   try{
     const {id } = req.params;
@@ -58,17 +64,54 @@ export const getGrievanceById = async (req: Request, res: Response, next: NextFu
       });
       return;
     }
-    const grievance = await grievanceService.getGrievanceById(id);
-    if (!grievance) {
+    const grievanceWithDetails = await grievanceService.getGrievanceWithResponses(id);
+    if (!grievanceWithDetails) {
       res.status(404).json({
         message: 'Grievance not found',
         success: false,
       });
       return;
     }
+
+    // Transform the data to match the required format
+    const formattedGrievance = {
+      grievance_details: {
+        id: grievanceWithDetails.id,
+        issue_id: grievanceWithDetails.issuse_id,
+        rollno: grievanceWithDetails.rollno,
+        campus: grievanceWithDetails.campus,
+        subject: grievanceWithDetails.subject,
+        description: grievanceWithDetails.description,
+        issue_type: grievanceWithDetails.issuse_type,
+        status: grievanceWithDetails.status,
+        attachment: grievanceWithDetails.attachment,
+        date_time: grievanceWithDetails.date
+      },
+      responses: grievanceWithDetails.responses.map((response: any) => ({
+        id: response.id,
+        response_text: response.responsetext,
+        response_by: response.responseby,
+        response_at: response.responseat,
+        status: response.status,
+        stage: response.stage,
+        attachment: response.attachment,
+        redirect: response.redirect,
+        date: response.date
+      })),
+      history: grievanceWithDetails.history.map((hist: any) => ({
+        id: hist.id,
+        from_status: hist.from_status,
+        to_status: hist.to_status,
+        action_by: hist.action_by,
+        stage_type: hist.stage_type,
+        note: hist.note,
+        date: hist.date
+      }))
+    };
+
     res.status(200).json({
-      message: 'Grievance retrieved successfully',
-      data: grievance,
+      message: 'Grievance with details retrieved successfully',
+      data: formattedGrievance,
       success: true,
     });
   } catch (error) {
@@ -79,13 +122,76 @@ export const getGrievanceById = async (req: Request, res: Response, next: NextFu
     });
   }
 };
-//get all grievances
+//get all grievances with responses, history, and attachments
 export const getAllGrievances = async (req: Request, res: Response): Promise<void> => {
   try {
-    const grievances = await grievanceService.getAllGrievances();
+    const grievances = await grievanceService.getAllGrievancesWithCompleteDetails();
+    
+    // Transform the data to match the required format - grouped by issue_id
+    const grievancesByIssueId: Record<string, any> = {};
+
+    grievances.forEach((grievance: any) => {
+      const issueId = grievance.issuse_id;
+      
+      if (!grievancesByIssueId[issueId]) {
+        grievancesByIssueId[issueId] = {
+          issue_id: issueId,
+          grievance_details: {
+            id: grievance.id,
+            issue_id: grievance.issuse_id,
+            rollno: grievance.rollno,
+            campus: grievance.campus,
+            subject: grievance.subject,
+            description: grievance.description,
+            issue_type: grievance.issuse_type,
+            status: grievance.status,
+            attachment: grievance.attachment,
+            date_time: grievance.date
+          },
+          responses_and_work: {
+            responses: grievance.responses.map((response: any) => ({
+              id: response.id,
+              response_text: response.responsetext,
+              response_by: response.responseby,
+              response_at: response.responseat,
+              status: response.status,
+              stage: response.stage,
+              attachment: response.attachment,
+              redirect: response.redirect,
+              date: response.date
+            })),
+            history: grievance.history.map((hist: any) => ({
+              id: hist.id,
+              from_status: hist.from_status,
+              to_status: hist.to_status,
+              action_by: hist.action_by,
+              stage_type: hist.stage_type,
+              note: hist.note,
+              date: hist.date
+            })),
+            attachments: grievance.attachments.map((attachment: any) => ({
+              id: attachment.id,
+              file_name: attachment.filename,
+              file_path: attachment.filepath,
+              uploaded_by: attachment.uploadedby,
+              uploaded_at: attachment.uploadedat,
+              created_at: attachment.createdat,
+              updated_at: attachment.updatedat
+            }))
+          }
+        };
+      }
+    });
+
+    // Convert to array and sort by date (most recent first)
+    const formattedGrievances = Object.values(grievancesByIssueId).sort((a: any, b: any) => 
+      new Date(b.grievance_details.date_time).getTime() - new Date(a.grievance_details.date_time).getTime()
+    );
+
     res.status(200).json({
-      message: 'Grievances retrieved successfully',
-      data: grievances,
+      message: 'All grievances with complete details retrieved successfully',
+      data: formattedGrievances,
+      total_grievances: formattedGrievances.length,
       success: true,
     });
   } catch (error) {
@@ -96,7 +202,7 @@ export const getAllGrievances = async (req: Request, res: Response): Promise<voi
     });
   }
 };
-// Get user's own grievances
+// Get user's own grievances with responses, history, and attachments
 export const getMyGrievances = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.User) {
@@ -107,10 +213,73 @@ export const getMyGrievances = async (req: Request, res: Response, next: NextFun
       return;
     }
     const userRollNo = req.User.rollno;
-    const grievances = await grievanceService.getGrievancesByRollNo(userRollNo);
+    const grievances = await grievanceService.getGrievancesByRollNoWithCompleteDetails(userRollNo);
+    
+    // Transform the data to match the required format - grouped by issue_id
+    const grievancesByIssueId: Record<string, any> = {};
+
+    grievances.forEach((grievance: any) => {
+      const issueId = grievance.issuse_id;
+      
+      if (!grievancesByIssueId[issueId]) {
+        grievancesByIssueId[issueId] = {
+          issue_id: issueId,
+          grievance_details: {
+            id: grievance.id,
+            issue_id: grievance.issuse_id,
+            rollno: grievance.rollno,
+            campus: grievance.campus,
+            subject: grievance.subject,
+            description: grievance.description,
+            issue_type: grievance.issuse_type,
+            status: grievance.status,
+            attachment: grievance.attachment,
+            date_time: grievance.date
+          },
+          responses_and_work: {
+            responses: grievance.responses.map((response: any) => ({
+              id: response.id,
+              response_text: response.responsetext,
+              response_by: response.responseby,
+              response_at: response.responseat,
+              status: response.status,
+              stage: response.stage,
+              attachment: response.attachment,
+              redirect: response.redirect,
+              date: response.date
+            })),
+            history: grievance.history.map((hist: any) => ({
+              id: hist.id,
+              from_status: hist.from_status,
+              to_status: hist.to_status,
+              action_by: hist.action_by,
+              stage_type: hist.stage_type,
+              note: hist.note,
+              date: hist.date
+            })),
+            attachments: grievance.attachments.map((attachment: any) => ({
+              id: attachment.id,
+              file_name: attachment.filename,
+              file_path: attachment.filepath,
+              uploaded_by: attachment.uploadedby,
+              uploaded_at: attachment.uploadedat,
+              created_at: attachment.createdat,
+              updated_at: attachment.updatedat
+            }))
+          }
+        };
+      }
+    });
+
+    // Convert to array and sort by date (most recent first)
+    const formattedGrievances = Object.values(grievancesByIssueId).sort((a: any, b: any) => 
+      new Date(b.grievance_details.date_time).getTime() - new Date(a.grievance_details.date_time).getTime()
+    );
+
     res.status(200).json({
-      message: 'Grievances retrieved successfully',
-      data: grievances,
+      message: 'My grievances with complete details retrieved successfully',
+      data: formattedGrievances,
+      total_grievances: formattedGrievances.length,
       success: true,
     });
   } catch (error) {
@@ -159,43 +328,209 @@ export const updateGrievanceStatus = async (req: Request, res: Response): Promis
     });
   }
 }
-//delete grievance
-export const deleteGrievance = async (req: Request, res: Response): Promise<void
-> => {
+// Get grievances by roll number with responses, history, and attachments (admin function)
+export const getGrievancesByRollNo = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
-
-    if (!id) {
+    const { rollno } = req.params;
+    if (!rollno) {
       res.status(400).json({
-        message: 'Grievance ID is required',
+        message: 'Roll number is required',
         success: false,
       });
       return;
     }
 
-    const deletedGrievance = await grievanceService.deleteGrievance(id);
-    
-    if (!deletedGrievance) {
-      res.status(404).json({
-        message: 'Grievance not found',
-        success: false,
-      });
-      return;
-    }
+    const grievances = await grievanceService.getGrievancesByRollNoWithCompleteDetails(rollno);
+      // Transform the data to match the required format - grouped by issue_id
+    const grievancesByIssueId: Record<string, any> = {};
+
+    grievances.forEach((grievance: any) => {
+      const issueId = grievance.issuse_id;
+      
+      if (!grievancesByIssueId[issueId]) {
+        grievancesByIssueId[issueId] = {
+          issue_id: issueId,
+          grievance_details: {
+            id: grievance.id,
+            issue_id: grievance.issuse_id,
+            rollno: grievance.rollno,
+            campus: grievance.campus,
+            subject: grievance.subject,
+            description: grievance.description,
+            issue_type: grievance.issuse_type,
+            status: grievance.status,
+            attachment: grievance.attachment,
+            date_time: grievance.date
+          },
+          responses_and_work: {
+            responses: grievance.responses.map((response: any) => ({
+              id: response.id,
+              response_text: response.responsetext,
+              response_by: response.responseby,
+              response_at: response.responseat,
+              status: response.status,
+              stage: response.stage,
+              attachment: response.attachment,
+              redirect: response.redirect,
+              date: response.date
+            })),
+            history: grievance.history.map((hist: any) => ({
+              id: hist.id,
+              from_status: hist.from_status,
+              to_status: hist.to_status,
+              action_by: hist.action_by,
+              stage_type: hist.stage_type,
+              note: hist.note,
+              date: hist.date
+            })),
+            attachments: grievance.attachments.map((attachment: any) => ({
+              id: attachment.id,
+              file_name: attachment.filename,
+              file_path: attachment.filepath,
+              uploaded_by: attachment.uploadedby,
+              uploaded_at: attachment.uploadedat,
+              created_at: attachment.createdat,
+              updated_at: attachment.updatedat
+            }))
+          }
+        };
+      }
+    });
+
+    // Convert to array and sort by date (most recent first)
+    const formattedGrievances = Object.values(grievancesByIssueId).sort((a: any, b: any) => 
+      new Date(b.grievance_details.date_time).getTime() - new Date(a.grievance_details.date_time).getTime()
+    );
 
     res.status(200).json({
-      message: 'Grievance deleted successfully',
-      data: deletedGrievance,
+      message: 'Grievances with complete details retrieved successfully for roll number',
+      data: formattedGrievances,
+      total_grievances: formattedGrievances.length,
       success: true,
     });
   } catch (error) {
     res.status(500).json({
-      message: 'Error deleting grievance',
+      message: 'Error retrieving grievances',
       error: error instanceof Error ? error.message : 'An unknown error occurred',
       success: false,
     });
   }
 };
+
+// Get grievance by issue_id (search functionality)
+export const getGrievanceByIssueId = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { issue_id } = req.params;
+    if (!issue_id) {
+      res.status(400).json({
+        message: 'Issue ID is required',
+        success: false,
+      });
+      return;
+    }
+
+    // Search for grievance by issue_id
+    const grievanceResult = await grievanceService.getGrievanceByIssueId(issue_id);
+    if (!grievanceResult) {
+      res.status(404).json({
+        message: 'Grievance not found with the provided issue ID',
+        success: false,
+      });
+      return;
+    }    // Get complete details for the found grievance (convert id to string)
+    const grievanceWithDetails = await grievanceService.getGrievanceWithResponses(grievanceResult.id.toString());
+    
+    if (!grievanceWithDetails) {
+      // If we can't get details, return the basic grievance info
+      const formattedGrievance = {
+        grievance_details: {
+          id: grievanceResult.id,
+          issue_id: grievanceResult.issuse_id,
+          rollno: grievanceResult.rollno,
+          campus: grievanceResult.campus,
+          subject: grievanceResult.subject,
+          description: grievanceResult.description,
+          issue_type: grievanceResult.issuse_type,
+          status: grievanceResult.status,
+          attachment: grievanceResult.attachment,
+          date_time: grievanceResult.date
+        },
+        responses_and_work: {
+          responses: [],
+          history: [],
+          attachments: []
+        }
+      };
+
+      res.status(200).json({
+        message: 'Grievance found (basic details only)',
+        data: formattedGrievance,
+        success: true,
+      });
+      return;
+    }
+    
+    // Transform the data to match the required format
+    const formattedGrievance = {
+      grievance_details: {
+        id: grievanceWithDetails.id,
+        issue_id: grievanceWithDetails.issuse_id,
+        rollno: grievanceWithDetails.rollno,
+        campus: grievanceWithDetails.campus,
+        subject: grievanceWithDetails.subject,
+        description: grievanceWithDetails.description,
+        issue_type: grievanceWithDetails.issuse_type,
+        status: grievanceWithDetails.status,
+        attachment: grievanceWithDetails.attachment,
+        date_time: grievanceWithDetails.date
+      },
+      responses_and_work: {
+        responses: grievanceWithDetails.responses.map((response: any) => ({
+          id: response.id,
+          response_text: response.responsetext,
+          response_by: response.responseby,
+          response_at: response.responseat,
+          status: response.status,
+          stage: response.stage,
+          attachment: response.attachment,
+          redirect: response.redirect,
+          date: response.date
+        })),
+        history: grievanceWithDetails.history.map((hist: any) => ({
+          id: hist.id,
+          from_status: hist.from_status,
+          to_status: hist.to_status,
+          action_by: hist.action_by,
+          stage_type: hist.stage_type,
+          note: hist.note,
+          date: hist.date
+        })),
+        attachments: grievanceWithDetails.attachments ? grievanceWithDetails.attachments.map((attachment: any) => ({
+          id: attachment.id,
+          file_name: attachment.filename,
+          file_path: attachment.filepath,
+          uploaded_by: attachment.uploadedby,
+          uploaded_at: attachment.uploadedat,
+          created_at: attachment.createdat,
+          updated_at: attachment.updatedat
+        })) : []
+      }
+    };
+
+    res.status(200).json({
+      message: 'Grievance found and retrieved successfully',
+      data: formattedGrievance,
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error searching for grievance',
+      error: error instanceof Error ? error.message : 'An unknown error occurred',
+      success: false,
+    });
+  }
+};
+
 // src/controllers/grievance.controller.ts
 // This controller handles all grievance-related operations such as creating, retrieving, updating, and deleting grievances
 // Export all functions for use in routes
@@ -205,5 +540,6 @@ export default {
   getAllGrievances,
   getMyGrievances,
   updateGrievanceStatus,
-  deleteGrievance
+  getGrievancesByRollNo,
+  getGrievanceByIssueId
 };

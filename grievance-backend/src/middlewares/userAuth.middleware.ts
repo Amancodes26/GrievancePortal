@@ -84,15 +84,16 @@ export const verifyJWT = async (req: Request, res: Response, next: NextFunction)
         success: false,
       });
       return;
-    }    
-    
-    // Set user data in the format expected by controllers
+    }        // Set user data in the format expected by controllers
     req.user = {
       rollNumber: user.rollno,  // Map rollno to rollNumber
       name: user.name,
       email: user.email,
       role: 'STUDENT'  // Default role, can be enhanced later
     };
+
+    // Also set req.User for compatibility with grievance controller
+    req.User = user;
 
     next();
   } catch (error: any) {
