@@ -792,6 +792,9 @@ export const GrievanceQueries = {
   GET_BY_ID: `
     SELECT * FROM grievance WHERE id = $1
   `,
+  GET_BY_ISSUE_ID: `
+    SELECT * FROM grievance WHERE Issuse_Id = $1
+  `,
   GET_BY_ROLLNO: `
     SELECT * FROM grievance WHERE RollNo = $1 ORDER BY Date DESC
   `,
@@ -801,13 +804,24 @@ export const GrievanceQueries = {
   UPDATE_STATUS: `
     UPDATE grievance SET Status = $2 WHERE id = $1 RETURNING *
   `,
+  UPDATE_STATUS_BY_ISSUE_ID: `
+    UPDATE grievance SET Status = $2 WHERE Issuse_Id = $1 RETURNING *
+  `,
   UPDATE: (fields: string[]) => `
     UPDATE grievance SET
       ${fields.map((f, i) => `${f} = $${i + 2}`).join(",\n      ")}
     WHERE id = $1 RETURNING *
   `,
+  UPDATE_BY_ISSUE_ID: (fields: string[]) => `
+    UPDATE grievance SET
+      ${fields.map((f, i) => `${f} = $${i + 2}`).join(",\n      ")}
+    WHERE Issuse_Id = $1 RETURNING *
+  `,
   DELETE: `
     DELETE FROM grievance WHERE id = $1 RETURNING *
+  `,
+  DELETE_BY_ISSUE_ID: `
+    DELETE FROM grievance WHERE Issuse_Id = $1 RETURNING *
   `
 };
 
