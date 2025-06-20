@@ -360,7 +360,7 @@ export const listAttachments = async (req: AuthenticatedRequest, res: Response) 
     }
     
     // Verify user has access to this grievance
-    const grievance = await grievanceService.getGrievanceByIssueId(parseInt(issue_id));
+    const grievance = await grievanceService.getGrievanceByIssueId(issue_id);
     if (!grievance || grievance.rollno !== userRollno) {
       return res.status(403).json({
         message: 'Access denied - You can only view attachments from your own grievances',
