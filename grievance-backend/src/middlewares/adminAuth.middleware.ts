@@ -1,17 +1,19 @@
 import { Response, Request, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { DatabaseService } from "../services/database";
-import { PersonalInfo } from "../models/PersonalInfo";
+import pool from "../db";
+import { AdminOTPQueries } from "../db/queries";
+// Type augmentation is handled automatically by the TypeScript compiler
+// No need to import the type declaration file at runtime
 
 interface JWTPayload {
-  rollNumber: string;
-  name: string;
+  adminId: string;
   email: string;
+  role: string;
   iat?: number;
   exp?: number;
 }
 
-export const verifyJWT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const verifyAdminJWT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const token =
     //   req.cookies?.jwtToken ||
@@ -59,30 +61,29 @@ export const verifyJWT = async (req: Request, res: Response, next: NextFunction)
         success: false,
       });
       return;
-    }    // Find the user associated with the token
-    const user = await DatabaseService.findUserByRollNumber(decoded.rollNumber);
-    
-    if (!user) {
+    }    // Find the admin associated with the token
+    const result = await pool.query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [decoded.email]);
+
+    // console.log("Admin email:", decoded.email);
+
+    if (result.rows.length === 0) {
       res.status(403).json({
-        message: "JWT_TOKEN_INVALID_USER_NOT_FOUND",
+        message: "JWT_TOKEN_INVALID_ADMIN_NOT_FOUND",
         status: 403,
         success: false,
       });
       return;
-    }        // Set user data in the format expected by controllers
-    req.user = {
-      rollNumber: user.rollno,  // Map rollno to rollNumber
-      name: user.name,
-      email: user.email,
-      role: 'STUDENT'  // Default role, can be enhanced later
-    };
+    }
 
-    // Also set req.User for compatibility with grievance controller
-    req.User = user;
+    const admin = result.rows[0];
 
+    // Exclude sensitive information (password)
+    const { password, ...adminWithoutPassword } = admin;
+    req.admin = adminWithoutPassword;
+    
     next();
   } catch (error: any) {
-    console.error("Error verifying JWT:", error);
+    console.error("Error verifying admin JWT:", error);
     res.status(403).json({
       message: "GENERAL_ERROR",
       status: 403,
@@ -91,4 +92,3 @@ export const verifyJWT = async (req: Request, res: Response, next: NextFunction)
     });
   }
 };
-

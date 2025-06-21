@@ -146,15 +146,10 @@ const checkRateLimit = (identifier: string): boolean => {
   return true;
 };
 
-// Interface for authenticated request
-interface AuthenticatedRequest extends Request {
-  User?: any;
-}
-
 // Enhanced upload attachment with memory storage
 export const uploadAttachment = [
   upload.single('attachment'),
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     const uploadStartTime = Date.now();
     
     try {
@@ -268,7 +263,7 @@ export const uploadAttachment = [
 ];
 
 // Download attachment from database
-export const downloadAttachment = async (req: AuthenticatedRequest, res: Response) => {
+export const downloadAttachment = async (req: Request, res: Response) => {
   try {
     const { attachment_id } = req.params;
     const userRollno = req.User?.rollno || req.body.test_user_rollno;
@@ -340,7 +335,7 @@ export const downloadAttachment = async (req: AuthenticatedRequest, res: Respons
 };
 
 // List attachments for a grievance
-export const listAttachments = async (req: AuthenticatedRequest, res: Response) => {
+export const listAttachments = async (req: Request, res: Response) => {
   try {
     const { issue_id } = req.params;
     const userRollno = req.User?.rollno || req.body.test_user_rollno;
@@ -403,7 +398,7 @@ export const listAttachments = async (req: AuthenticatedRequest, res: Response) 
 };
 
 // Delete attachment
-export const deleteAttachment = async (req: AuthenticatedRequest, res: Response) => {
+export const deleteAttachment = async (req: Request, res: Response) => {
   try {
     const { attachment_id } = req.params;
     const userRollno = req.User?.rollno || req.body.test_user_rollno;

@@ -1,12 +1,14 @@
+/// <reference path="../types/express/index.d.ts" />
 import { Request, Response, NextFunction } from 'express';
 import * as grievanceService from '../services/grievance.service';
 import { Grievance } from '../models/Grievance';
+import { PersonalInfo } from '../models/PersonalInfo';
 
 //create a new grievance
 export const createGrievance = async (req: Request, res: Response): Promise<void> => {
   try {
     // Extract user info from JWT token (set by middleware)
-    if (!req.User) {
+    if (!req.user) {
       res.status(403).json({
         message: 'User not authenticated',
         success: false,
@@ -15,7 +17,7 @@ export const createGrievance = async (req: Request, res: Response): Promise<void
     }    const grievanceData: Grievance = req.body;
     const serviceData = {
       issue_id: '', // Will be set below
-      rollno: req.User.rollno,
+      rollno: req.user.rollNumber,
       campus: grievanceData.campus,
       subject: grievanceData.subject,
       description: grievanceData.description,
@@ -25,7 +27,7 @@ export const createGrievance = async (req: Request, res: Response): Promise<void
     };
     
     // Ensure required fields are present
-    if (!serviceData.subject || !serviceData.description || grievanceData.attachment === undefined || grievanceData.attachment === null || !req.User.rollno || !serviceData.issue_type) {
+    if (!serviceData.subject || !serviceData.description || grievanceData.attachment === undefined || grievanceData.attachment === null || !req.user.rollNumber || !serviceData.issue_type) {
       res.status(400).json({
         message: 'Subject, description, attachment, roll number, and issue type are required',
         success: false,
@@ -201,18 +203,18 @@ export const getAllGrievances = async (req: Request, res: Response): Promise<voi
       success: false,
     });
   }
-};
+}
 // Get user's own grievances with responses, history, and attachments
 export const getMyGrievances = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.User) {
+    if (!req.user) {
       res.status(403).json({
         message: 'User not authenticated',
         success: false,
       });
       return;
     }
-    const userRollNo = req.User.rollno;
+    const userRollNo = req.user.rollNumber;
     const grievances = await grievanceService.getGrievancesByRollNoWithCompleteDetails(userRollNo);
     
     // Transform the data to match the required format - grouped by issue_id

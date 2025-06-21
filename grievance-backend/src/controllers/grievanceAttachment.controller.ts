@@ -208,15 +208,10 @@ const checkRateLimit = (identifier: string): boolean => {
   return true;
 };
 
-// Interface for authenticated request
-interface AuthenticatedRequest extends Request {
-  User?: any; // Use any for flexibility in testing
-}
-
 // Enhanced upload attachment with comprehensive security
 export const uploadAttachment = [
   upload.single('attachment'),
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     const uploadStartTime = Date.now();
     let tempFilePath: string | null = null;
     
@@ -386,7 +381,7 @@ export const uploadAttachment = [
 ];
 
 // Get attachments for a grievance with security checks
-export const getAttachmentsByIssueId = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const getAttachmentsByIssueId = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { issue_id } = req.params;
     const { test_user_rollno } = req.query;
@@ -452,7 +447,7 @@ export const getAttachmentsByIssueId = async (req: AuthenticatedRequest, res: Re
 };
 
 // Secure download attachment with comprehensive access control
-export const downloadAttachment = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const downloadAttachment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { attachment_id } = req.params;
     const { test_user_rollno } = req.query;
@@ -557,7 +552,7 @@ export const downloadAttachment = async (req: AuthenticatedRequest, res: Respons
 };
 
 // Secure delete attachment with proper authorization
-export const deleteAttachment = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const deleteAttachment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { attachment_id } = req.params;
     const { test_user_rollno } = req.body;
@@ -660,7 +655,7 @@ export const deleteAttachment = async (req: AuthenticatedRequest, res: Response,
 };
 
 // Get attachment metadata with security filtering
-export const getAttachmentById = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const getAttachmentById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { attachment_id } = req.params;
     const { test_user_rollno } = req.query;
