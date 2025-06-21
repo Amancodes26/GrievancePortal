@@ -243,7 +243,7 @@ export class DatabaseService {
 
   static async createProgramInfo(data: CreateProgramInfoData) {
     const values = [
-      data.ProgramId,
+       data.ProgramId,
       data.ProgramCode,
       data.ProgramName,
       data.ProgramType,

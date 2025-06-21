@@ -22,8 +22,8 @@ router.get('/my-grievances', verifyJWT, getMyGrievances);
 router.get('/issue/:issue_id', getGrievanceByIssueId);     // Search by issue_id
 router.get('/:id', getGrievanceById);                      // Get by grievance id
 
-// Admin/User routes
-router.get('/', getAllGrievances);                          // Get all grievances (filtered by role)
-router.get('/by-rollno/:rollno', getGrievancesByRollNo);    // Get grievances by roll number with complete details
-router.put('/:id', updateGrievanceStatus);                  // Update grievance
+// Admin/User routes (require authentication for data privacy)
+router.get('/', verifyJWT, getAllGrievances);                          // Get all grievances (filtered by role) - Auth required
+router.get('/by-rollno/:rollno', verifyJWT, getGrievancesByRollNo);    // Get grievances by roll number - Auth required for privacy
+router.put('/:id', verifyJWT, updateGrievanceStatus);                  // Update grievance - Auth required
 export default router;
