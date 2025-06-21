@@ -8,13 +8,7 @@
                 "maxLambdaSize": "50mb"
             }
         }
-    ],
-    "routes": [{ "src": "/(.*)", "dest": "src/index.ts" }],
-    "functions": {
-        "src/index.ts": {
-            "maxDuration": 50
-        }
-    },
+    ],    "routes": [{ "src": "/(.*)", "dest": "src/index.ts" }],
     "env": {
         "VERCEL": "true"
     }
