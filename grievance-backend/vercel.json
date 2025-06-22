@@ -1,28 +1,5 @@
 {
     "version": 2,
-    "builds": [
-        {
-            "src": "src/index.ts",
-            "use": "@vercel/node",
-            "config": {
-                "includeFiles": ["src/**", "uploads/**", "Database/**"],
-                "excludeFiles": ["node_modules/**", "src/**/*.test.ts", "src/**/*.spec.ts"]
-            }
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "src/index.ts"
-        }
-    ],
-    "functions": {
-        "src/index.ts": {
-            "maxDuration": 30,
-            "memory": 1024
-        }
-    },
-    "env": {
-        "NODE_ENV": "production"
-    }
+    "builds": [{ "src": "src/index.ts", "use": "@vercel/node" }],
+    "routes": [{ "src": "/(.*)", "dest": "src/index.ts" }]
 }
