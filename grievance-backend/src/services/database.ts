@@ -13,6 +13,7 @@ import { CourseProgramCrudQueries } from "../db/queries";
  
 // PersonalInfo CRUD
 import pool from "../db";
+import ConnectionManager from "../db/connectionManager";
 import { AdminOTP, CreateAdminOTPData } from "../models/OTP";
 import { PersonalInfo, CreatePersonalInfoData, UpdatePersonalInfoData } from "../models/PersonalInfo";
 import { OTP, CreateOTPData } from "../models/OTP";
@@ -27,15 +28,14 @@ export interface CampusData {
   CampusId?: number; // Optional for creation, required for updates
 }
 
-export class DatabaseService {
-  // CourseProgram CRUD
+export class DatabaseService {  // CourseProgram CRUD
   static async getAllCourseProgram() {
-    const result = await pool.query(CourseProgramCrudQueries.GET_ALL);
+    const result = await ConnectionManager.query(CourseProgramCrudQueries.GET_ALL);
     return result.rows;
   }
 
   static async getCourseProgramByCompositeKey(programId: number, courseId: number, batch: number) {
-    const result = await pool.query(CourseProgramCrudQueries.GET_BY_COMPOSITE_KEY, [programId, courseId, batch]);
+    const result = await ConnectionManager.query(CourseProgramCrudQueries.GET_BY_COMPOSITE_KEY, [programId, courseId, batch]);
     return result.rows[0] || null;
   }
 
@@ -46,7 +46,7 @@ export class DatabaseService {
       data.Batch,
       data.IsActive !== undefined ? data.IsActive : true
     ];
-    const result = await pool.query(CourseProgramCrudQueries.CREATE, values);
+    const result = await ConnectionManager.query(CourseProgramCrudQueries.CREATE, values);
     return result.rows[0];
   }
 
@@ -58,12 +58,12 @@ export class DatabaseService {
     const fields = Object.keys(data);
     const values = [programId, courseId, batch, ...fields.map(f => (data as any)[f])];
     const query = CourseProgramCrudQueries.UPDATE_BY_COMPOSITE_KEY(fields);
-    const result = await pool.query(query, values);
+    const result = await ConnectionManager.query(query, values);
     return result.rows[0] || null;
   }
 
   static async deleteCourseProgramByCompositeKey(programId: number, courseId: number, batch: number) {
-    const result = await pool.query(CourseProgramCrudQueries.DELETE_BY_COMPOSITE_KEY, [programId, courseId, batch]);
+    const result = await ConnectionManager.query(CourseProgramCrudQueries.DELETE_BY_COMPOSITE_KEY, [programId, courseId, batch]);
     return result.rows[0] || null;
   }
   // ...existing methods...

@@ -2,7 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import * as grievanceService from '../../services/grievance.service';
 import * as responseService from '../../services/response.service';
 import * as historyService from '../../services/history.service';
+import { DeptAdminService } from '../../services/deptAdmin.service';
+import { SuperAdminService } from '../../services/superAdmin.service';
 import { STATUS, PRIORITY, Priority, Status } from '../../constants/grievanceConstants';
+import { AdminRole } from '../../types/common';
 import { PersonalInfo } from '../../models/PersonalInfo';
 
 // Department mapping based on issue types
@@ -23,18 +26,28 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-// Get department-specific grievances for dept admin
+// Get department-specific grievances for dept admin with campus filtering
 export const getDepartmentGrievances = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    // For testing without auth - use mock user or query params
-    let department: Department;
+    // Get department from authenticated user or query params
+    let department: AdminRole;
+    let campusId: number | undefined;
     
-    if (req.User) {
-      // Normal authenticated flow
-      department = req.User.department || req.query.department as Department;
+    if (req.admin) {
+      // Authenticated admin flow
+      const adminRole = req.admin.Role as AdminRole;
+      campusId = req.admin.CampusId;
+      
+      // If superadmin, allow them to specify department via query param or default to 'campus'
+      if (adminRole === 'superadmin') {
+        department = (req.query.department as AdminRole) || 'campus';
+      } else {
+        department = adminRole;
+      }
     } else {
-      // Testing mode - get department from query params
-      department = req.query.department as Department;
+      // Testing mode - get from query params
+      department = req.query.department as AdminRole;
+      campusId = req.query.campusId ? parseInt(req.query.campusId as string) : undefined;
       
       if (!department) {
         res.status(400).json({
@@ -53,25 +66,9 @@ export const getDepartmentGrievances = async (req: AuthenticatedRequest, res: Re
       return;
     }
 
-    // Get all grievances
-    const allGrievances = await grievanceService.getAllGrievancesWithCompleteDetails();
+    // Get department grievances with campus filtering
+    const departmentGrievances = await DeptAdminService.getDepartmentGrievances(department, campusId);
     
-    // Filter grievances by department
-    const departmentGrievances = allGrievances.filter((grievance: any) => {
-      const issueType = grievance.issuse_type?.toUpperCase();
-      
-      // Map issue types to departments
-      if (department === 'academic') {
-        return issueType === 'ACADEMIC';
-      } else if (department === 'exam') {
-        return issueType === 'EXAM';
-      } else if (department === 'campus') {
-        return ['FACILITY', 'TECHNICAL', 'ADMINISTRATIVE', 'OTHER'].includes(issueType);
-      }
-      
-      return false;
-    });
-
     // Group by issue_id and format response
     const grievancesByIssueId: Record<string, any> = {};
 
@@ -82,6 +79,7 @@ export const getDepartmentGrievances = async (req: AuthenticatedRequest, res: Re
         grievancesByIssueId[issueId] = {
           issue_id: issueId,
           department: department,
+          campus_id: campusId,
           grievance_details: {
             id: grievance.id,
             issue_id: grievance.issuse_id,
@@ -137,6 +135,7 @@ export const getDepartmentGrievances = async (req: AuthenticatedRequest, res: Re
     res.status(200).json({
       message: `${department.toUpperCase()} department grievances retrieved successfully`,
       department: department,
+      campus_id: campusId,
       data: formattedGrievances,
       total_grievances: formattedGrievances.length,
       success: true,
@@ -330,7 +329,7 @@ export const rejectGrievance = async (req: AuthenticatedRequest, res: Response):
   }
 };
 
-// Redirect grievance to another department
+// Enhanced redirection with campus support
 export const redirectGrievance = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { grievanceId } = req.params;
@@ -339,6 +338,7 @@ export const redirectGrievance = async (req: AuthenticatedRequest, res: Response
       redirect_reason, 
       priority, 
       note,
+      target_campus_id,
       test_user_rollno,
       department
     } = req.body;
@@ -351,9 +351,9 @@ export const redirectGrievance = async (req: AuthenticatedRequest, res: Response
       return;
     }
 
-    // Get user rollno for response
-    const userRollno = req.User?.rollno || test_user_rollno || 'TEST_ADMIN';
-    const userDepartment = req.User?.department || department || 'dept';
+    // Get admin info
+    const adminId = req.admin?.AdminId || test_user_rollno || 'TEST_ADMIN';
+    const adminCampusId = req.admin?.CampusId;
 
     // Validate target department
     if (!['exam', 'academic', 'campus'].includes(target_department)) {
@@ -371,50 +371,25 @@ export const redirectGrievance = async (req: AuthenticatedRequest, res: Response
         success: false,
       });
       return;
-    }    // Get the grievance
-    const grievance = await grievanceService.getGrievanceByIssueId(grievanceId);
-    if (!grievance) {
-      res.status(404).json({
-        message: 'Grievance not found',
-        success: false,
-      });
-      return;
-    }    // Update grievance status (remove priority update since column doesn't exist)
-    const updateData: any = { status: 'IN_PROGRESS' };
-    // Note: Priority will be mentioned in response text instead of database field
+    }
 
-    await grievanceService.updateGrievanceByIssueId(grievanceId, updateData);// Create response for redirection
-    const responseData = {
-      issue_id: grievance.id, // Use database id for response table
-      response_text: `REDIRECTED to ${target_department.toUpperCase()} department: ${redirect_reason}${priority ? ` [Priority: ${priority}]` : ''}`,
-      response_by: userRollno,
-      status: 'IN_PROGRESS',
-      stage: 'FOLLOW_UP',
-      attachment: null,
-      redirect: target_department
-    };
-
-    const redirectResponse = await responseService.createResponse(responseData);// Create history entry
-    const historyData = {
-      grievance_id: grievance.id, // Use database id for history table
-      from_status: grievance.status,
-      to_status: 'IN_PROGRESS',
-      action_by: userRollno,
-      action_type: 'FORWARDED',
-      note: note || `Redirected to ${target_department.toUpperCase()} by ${userDepartment} admin: ${redirect_reason}${priority ? ` [Priority: ${priority}]` : ''}`,
-      date_time: Date.now()
-    };
-
-    await historyService.createHistory(historyData);
+    // Use enhanced redirection service
+    const result = await DeptAdminService.redirectGrievance(
+      grievanceId,
+      target_department as AdminRole,
+      {
+        redirectReason: redirect_reason,
+        priority: priority as Priority,
+        note: note,
+        adminId: adminId,
+        adminCampusId: adminCampusId
+      },
+      target_campus_id
+    );
 
     res.status(200).json({
       message: 'Grievance redirected successfully',
-      data: {
-        response: redirectResponse,
-        target_department: target_department,
-        priority: priority || null,
-        status: 'IN_PROGRESS'
-      },
+      data: result,
       success: true,
     });
   } catch (error) {
@@ -507,17 +482,35 @@ export const updateGrievanceStatus = async (req: AuthenticatedRequest, res: Resp
   }
 };
 
-// Get grievance statistics for department
+// Get department statistics with campus filtering
 export const getDepartmentStats = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const department = req.User?.department || req.query.department as Department;
+    let department: AdminRole;
+    let campusId: number | undefined;
     
-    if (!department) {
-      res.status(400).json({
-        message: 'Department parameter is required. Use ?department=exam|academic|campus',
-        success: false,
-      });
-      return;
+    if (req.admin) {
+      // Authenticated admin flow
+      const adminRole = req.admin.Role as AdminRole;
+      campusId = req.admin.CampusId;
+      
+      // If superadmin, allow them to specify department via query param or default to 'campus'
+      if (adminRole === 'superadmin') {
+        department = (req.query.department as AdminRole) || 'campus';
+      } else {
+        department = adminRole;
+      }
+    } else {
+      // Testing mode - get from query params
+      department = req.query.department as AdminRole;
+      campusId = req.query.campusId ? parseInt(req.query.campusId as string) : undefined;
+      
+      if (!department) {
+        res.status(400).json({
+          message: 'Department parameter is required. Use ?department=exam|academic|campus',
+          success: false,
+        });
+        return;
+      }
     }
     
     if (!['exam', 'academic', 'campus'].includes(department)) {
@@ -528,50 +521,11 @@ export const getDepartmentStats = async (req: AuthenticatedRequest, res: Respons
       return;
     }
 
-    // Get all grievances
-    const allGrievances = await grievanceService.getAllGrievancesWithCompleteDetails();
-    
-    // Filter grievances by department
-    const departmentGrievances = allGrievances.filter((grievance: any) => {
-      const issueType = grievance.issuse_type?.toUpperCase();
-      
-      if (department === 'academic') {
-        return issueType === 'ACADEMIC';
-      } else if (department === 'exam') {
-        return issueType === 'EXAM';
-      } else if (department === 'campus') {
-        return ['FACILITY', 'TECHNICAL', 'ADMINISTRATIVE', 'OTHER'].includes(issueType);
-      }
-      
-      return false;
-    });
-
-    // Calculate statistics
-    const stats = {
-      total: departmentGrievances.length,
-      pending: departmentGrievances.filter(g => g.status === 'PENDING').length,
-      in_progress: departmentGrievances.filter(g => g.status === 'IN_PROGRESS').length,
-      resolved: departmentGrievances.filter(g => g.status === 'RESOLVED').length,
-      rejected: departmentGrievances.filter(g => g.status === 'REJECTED').length,
-      returned: departmentGrievances.filter(g => g.status === 'RETURN').length,
-      by_priority: {
-        low: departmentGrievances.filter(g => g.priority === 'LOW').length,
-        medium: departmentGrievances.filter(g => g.priority === 'MEDIUM').length,
-        high: departmentGrievances.filter(g => g.priority === 'HIGH').length,
-        critical: departmentGrievances.filter(g => g.priority === 'CRITICAL').length,
-      },
-      by_issue_type: {} as Record<string, number>
-    };
-
-    // Count by issue type
-    departmentGrievances.forEach((grievance: any) => {
-      const issueType = grievance.issuse_type;
-      stats.by_issue_type[issueType] = (stats.by_issue_type[issueType] || 0) + 1;
-    });
+    // Get enhanced department statistics
+    const stats = await DeptAdminService.getDepartmentStats(department, campusId);
 
     res.status(200).json({
-      message: `${department.toUpperCase()} department statistics retrieved successfully`,
-      department: department,
+      message: 'Department statistics retrieved successfully',
       data: stats,
       success: true,
     });
@@ -584,11 +538,69 @@ export const getDepartmentStats = async (req: AuthenticatedRequest, res: Respons
   }
 };
 
+// Get admin's assigned campuses
+export const getAdminCampuses = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.admin) {
+      res.status(401).json({
+        message: 'Admin authentication required',
+        success: false,
+      });
+      return;
+    }
+
+    const campuses = await DeptAdminService.getAdminCampuses(req.admin.AdminId);
+
+    res.status(200).json({
+      message: 'Admin campuses retrieved successfully',
+      data: campuses,
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error retrieving admin campuses',
+      error: error instanceof Error ? error.message : 'An unknown error occurred',
+      success: false,
+    });
+  }
+};
+
+// Get main campus department admins
+export const getMainCampusDepartmentAdmins = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { department } = req.params;
+    
+    if (!['exam', 'academic', 'campus'].includes(department)) {
+      res.status(400).json({
+        message: 'Invalid department. Must be: exam, academic, or campus',
+        success: false,
+      });
+      return;
+    }
+
+    const admins = await DeptAdminService.getMainCampusDepartmentAdmins(department as AdminRole);
+
+    res.status(200).json({
+      message: `Main campus ${department} department admins retrieved successfully`,
+      data: admins,
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error retrieving main campus department admins',
+      error: error instanceof Error ? error.message : 'An unknown error occurred',
+      success: false,
+    });
+  }
+};
+
 export default {
   getDepartmentGrievances,
   addResponseToGrievance,
   rejectGrievance,
   redirectGrievance,
   updateGrievanceStatus,
-  getDepartmentStats
+  getDepartmentStats,
+  getAdminCampuses,
+  getMainCampusDepartmentAdmins
 };

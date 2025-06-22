@@ -4,7 +4,7 @@ export const permit = (...allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     // Check both req.user (for students) and req.admin (for admins)
     const userRole = req.user?.role;
-    const adminRole = req.admin?.role;
+    const adminRole = req.admin?.Role;
     const currentRole = userRole || adminRole;
     
     if (!currentRole || !allowedRoles.includes(currentRole)) {
@@ -20,7 +20,7 @@ export const permit = (...allowedRoles: string[]) => {
 };
 
 export const isAdmin = (req: Request, res: Response, next: NextFunction): void => {
-  const adminRole = req.admin?.role;
+  const adminRole = req.admin?.Role;
   
   if (!adminRole || adminRole !== 'superadmin') {
     res.status(403).json({ 
@@ -33,7 +33,7 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction): void =
 };
 
 export const isDeptAdmin = (req: Request, res: Response, next: NextFunction): void => {
-  const adminRole = req.admin?.role;
+  const adminRole = req.admin?.Role;
   
   if (!adminRole || !['deptadmin', 'superadmin'].includes(adminRole)) {
     res.status(403).json({ 

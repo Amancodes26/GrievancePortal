@@ -32,6 +32,7 @@
     "nodemailer": "^7.0.3",
     "otp-generator": "^4.0.1",
     "pg": "^8.16.0",
+    "uuid": "^11.1.0",
     "zod": "^3.25.64"
   },
   "devDependencies": {
@@ -44,7 +45,7 @@
     "@types/node-fetch": "^2.6.2",
     "@types/otp-generator": "^4.0.2",
     "@types/pg": "^8.15.4",
-    "form-data": "^4.0.0",
+    "form-data": "^4.0.3",
     "node-fetch": "^2.6.7",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",

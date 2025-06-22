@@ -19,7 +19,8 @@ router.post('/', verifyJWT, createGrievance);
 router.get('/my-grievances', verifyJWT, getMyGrievances);
 
 // Search routes
-router.get('/issue/:issue_id', getGrievanceByIssueId);     // Search by issue_id
+router.get('/search/:issue_id', getGrievanceByIssueId);    // Search by issue_id (matches collection)
+router.get('/issue/:issue_id', getGrievanceByIssueId);     // Search by issue_id (alternative)
 router.get('/:id', getGrievanceById);                      // Get by grievance id
 
 // Admin/User routes (require authentication for data privacy)

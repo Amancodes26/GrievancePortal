@@ -13,7 +13,7 @@ const ALLOWED_MIME_TYPES = ['application/pdf'];
 const ALLOWED_EXTENSIONS = ['.pdf'];
 const MAX_FILENAME_LENGTH = 100;
 
-// For Vercel compatibility - use temp directory or memory storage
+// For Vercel compatibility - use temp directory for file uploads
 const getUploadDir = () => {
   // Try to use a writable temp directory on Vercel
   const tempDir = process.env.VERCEL ? '/tmp/uploads' : path.join(process.cwd(), 'uploads', 'grievances');
@@ -190,7 +190,7 @@ const upload = multer({
 // Rate limiting helper (simple in-memory implementation)
 const uploadAttempts = new Map();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-const MAX_UPLOADS_PER_WINDOW = 5;
+const MAX_UPLOADS_PER_WINDOW = 50;
 
 const checkRateLimit = (identifier: string): boolean => {
   const now = Date.now();
@@ -209,176 +209,75 @@ const checkRateLimit = (identifier: string): boolean => {
 };
 
 // Enhanced upload attachment with comprehensive security
-export const uploadAttachment = [
-  upload.single('attachment'),
-  async (req: Request, res: Response, next: NextFunction) => {
-    const uploadStartTime = Date.now();
-    let tempFilePath: string | null = null;
-    
-    try {
-      // Rate limiting check
-      const userIdentifier = req.User?.rollno || req.ip || 'anonymous';
-      if (!checkRateLimit(userIdentifier)) {
-        return res.status(429).json({
-          message: 'Too many upload attempts. Please try again later.',
-          success: false
-        });
-      }
-      
-      if (!req.file) {
-        return res.status(400).json({
-          message: 'No file uploaded. Please select a PDF file to upload.',
-          success: false
-        });
-      }
-      
-      tempFilePath = req.file.path;
-      
-      const { issue_id, test_user_rollno } = req.body;
-      
-      if (!issue_id) {
-        return res.status(400).json({
-          message: 'Grievance issue_id is required',
-          success: false
-        });
-      }
-      
-      // Get user rollno
-      const userRollno = req.User?.rollno || test_user_rollno;
-      if (!userRollno) {
-        return res.status(401).json({
-          message: 'User authentication required',
-          success: false
-        });
-      }
-      
-      // Verify grievance exists and user has access
-      const grievance = await grievanceService.getGrievanceByIssueId(issue_id);
-      if (!grievance) {
-        return res.status(404).json({
-          message: 'Grievance not found',
-          success: false
-        });
-      }
-      
-      // Verify user owns the grievance (for additional security)
-      if (grievance.rollno !== userRollno) {
-        return res.status(403).json({
-          message: 'You can only upload attachments to your own grievances',
-          success: false
-        });
-      }
-      
-      // Check if grievance already has maximum attachments (e.g., 3 max)
-      const existingAttachments = await db.query(AttachmentQueries.GET_BY_ISSUE_ID, [grievance.id]);
-      if (existingAttachments.rows.length >= 3) {
-        return res.status(400).json({
-          message: 'Maximum 3 attachments allowed per grievance',
-          success: false
-        });
-      }
-      
-      // Advanced PDF validation
-      const pdfValidation = await validatePDFFile(tempFilePath);
-      if (!pdfValidation.isValid) {
-        return res.status(400).json({
-          message: `Invalid PDF file: ${pdfValidation.error}`,
-          success: false
-        });
-      }
-      
-      // Virus scan simulation
-      const virusScan = await simulateVirusScan(tempFilePath);
-      if (!virusScan.isClean) {
-        return res.status(400).json({
-          message: `File rejected: ${virusScan.threat}`,
-          success: false
-        });
-      }
-      
-      // Save attachment to database
-      const attachmentData = [
-        grievance.id, // Use database ID for foreign key
-        req.file.originalname,
-        tempFilePath,
-        userRollno
-      ];
-      
-      const result = await db.query(AttachmentQueries.CREATE, attachmentData);
-      const newAttachment = result.rows[0];
-      
-      // Update grievance attachment flag
-      await grievanceService.updateGrievanceByIssueId(issue_id, { attachment: 'true' });
-      
-      // Log successful upload for security monitoring
-      console.log(`[SECURITY] File uploaded successfully by ${userRollno} for grievance ${issue_id} at ${new Date().toISOString()}`);
-      
-      res.status(201).json({
-        message: 'Attachment uploaded successfully',
-        data: {
-          id: newAttachment.id,
-          issue_id: issue_id,
-          filename: newAttachment.filename,
-          uploadedby: newAttachment.uploadedby,
-          uploadedat: newAttachment.uploadedat,
-          size: req.file.size,
-          mimetype: req.file.mimetype,
-          security_checks: {
-            pdf_validation: 'passed',
-            virus_scan: 'clean',
-            rate_limit: 'within_limits'
-          }
-        },
-        processing_time: Date.now() - uploadStartTime,
-        success: true
-      });
-        } catch (error: any) {
-      // Log security incidents
-      console.error(`[SECURITY] Upload failed for ${req.User?.rollno || 'anonymous'}: ${error?.message || 'Unknown error'}`);
-      
-      // Handle specific multer errors
-      if (error instanceof multer.MulterError) {
-        if (error.code === 'LIMIT_FILE_SIZE') {
-          return res.status(400).json({
-            message: `File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`,
-            success: false
-          });
-        }
-        if (error.code === 'LIMIT_FILE_COUNT') {
-          return res.status(400).json({
-            message: 'Only one file allowed at a time',
-            success: false
-          });
-        }
-        if (error.code === 'LIMIT_UNEXPECTED_FILE') {
-          return res.status(400).json({
-            message: 'Unexpected file field. Use "attachment" field name',
-            success: false
-          });
-        }
-      }
-      
-      res.status(500).json({
-        message: 'Error uploading attachment',
-        error: process.env.NODE_ENV === 'development' ? (error?.message || 'Unknown error') : 'Internal server error',
-        success: false
-      });
-    } finally {
-      // Always clean up temp file on error
-      if (tempFilePath && fs.existsSync(tempFilePath)) {
-        try {
-          // Only delete if there was an error (not if successfully saved)
-          const wasSaved = res.statusCode === 201;
-          if (!wasSaved) {
-            fs.unlinkSync(tempFilePath);
-          }
-        } catch (cleanupError) {
-          console.error('Failed to cleanup temp file:', cleanupError);
-        }
-      }
+export const uploadAttachment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ message: 'No file uploaded.' });
+      return;
     }
+
+    const { issue_id } = req.body;
+    if (!issue_id) {
+      fs.unlinkSync(req.file.path);
+      res.status(400).json({ message: 'Grievance issue_id is required.' });
+      return;
+    }
+
+    const userRollno = req.User?.rollno;
+    if (!userRollno) {
+      fs.unlinkSync(req.file.path);
+      res.status(401).json({ message: 'User authentication required.' });
+      return;
+    }
+
+    // Check grievance and ownership
+    const grievance = await grievanceService.getGrievanceByIssueId(issue_id);
+    if (!grievance || grievance.rollno !== userRollno) {
+      fs.unlinkSync(req.file.path);
+      res.status(403).json({ message: 'Access denied.' });
+      return;
+    }
+
+    // Limit attachments per grievance
+    const existing = await db.query(AttachmentQueries.GET_BY_ISSUE_ID, [grievance.id]);
+    if (existing.rows.length >= 3) {
+      fs.unlinkSync(req.file.path);
+      res.status(400).json({ message: 'Maximum 3 attachments allowed.' });
+      return;
+    }
+
+    // Save to DB (make sure your query matches this order!)
+    const result = await db.query(AttachmentQueries.CREATE, [
+      grievance.id,
+      req.file.filename,
+      req.file.originalname,
+      req.file.path,
+      req.file.mimetype,
+      req.file.size,
+      userRollno
+    ]);
+    const newAttachment = result.rows[0];
+
+    res.status(201).json({
+      message: 'Attachment uploaded successfully.',
+      data: {
+        id: newAttachment.id,
+        issue_id: issue_id,
+        filename: newAttachment.filename,
+        uploadedby: newAttachment.uploadedby,
+        uploadedat: newAttachment.uploadedat,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      },
+      success: true
+    });
+  } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('Upload error:', error);
+    res.status(500).json({ message: 'Error uploading attachment.', error: errMsg });
   }
-];
+};
 
 // Get attachments for a grievance with security checks
 export const getAttachmentsByIssueId = async (req: Request, res: Response, next: NextFunction) => {

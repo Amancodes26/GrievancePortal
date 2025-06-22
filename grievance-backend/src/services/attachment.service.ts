@@ -1,4 +1,4 @@
-import  pool  from '../db';
+import ConnectionManager from '../db/connectionManager';
 import { AttachmentQueries } from '../db/queries';
 import fs from 'fs';
 import path from 'path';
@@ -14,10 +14,13 @@ interface AttachmentData {
 
 export const saveAttachment = async (data: AttachmentData) => {
   try {
-    const result = await pool.query(AttachmentQueries.CREATE, [
+    const result = await ConnectionManager.query(AttachmentQueries.CREATE, [
       data.grievanceId,
       data.fileName,
+      data.fileName, // OriginalFileName
       data.filePath,
+      data.mimeType,
+      data.fileSize,
       data.uploadedBy
     ]);
     
@@ -42,7 +45,7 @@ export const saveAttachment = async (data: AttachmentData) => {
 
 export const getAttachmentById = async (id: string) => {
   try {
-    const result = await pool.query('SELECT * FROM attachment WHERE id = $1', [id]);
+    const result = await ConnectionManager.query('SELECT * FROM attachment WHERE id = $1', [id]);
     
     if (result.rows.length === 0) {
       return null;
@@ -64,7 +67,7 @@ export const getAttachmentById = async (id: string) => {
 
 export const getAttachmentsByGrievanceId = async (issueId: string) => {
   try {
-    const result = await pool.query(AttachmentQueries.GET_BY_ISSUE_ID, [issueId]);
+    const result = await ConnectionManager.query(AttachmentQueries.GET_BY_ISSUE_ID, [issueId]);
     
     return result.rows.map(attachment => ({
       id: attachment.id,
@@ -94,7 +97,7 @@ export const deleteAttachment = async (id: string, userId?: string) => {
     }
     
     // Delete from database
-    const result = await pool.query(AttachmentQueries.DELETE, [id]);
+    const result = await ConnectionManager.query(AttachmentQueries.DELETE, [id]);
     
     if (result.rows.length === 0) {
       return false;
@@ -137,7 +140,7 @@ export const validateAttachmentAccess = async (attachmentId: string, userId: str
       WHERE g.issuse_id = $1 AND pi.id = $2
     `;
     
-    const grievanceResult = await pool.query(grievanceQuery, [attachment.issue_id, userId]);
+    const grievanceResult = await ConnectionManager.query(grievanceQuery, [attachment.issue_id, userId]);
     
     if (grievanceResult.rows.length > 0) {
       return { hasAccess: true, attachment };

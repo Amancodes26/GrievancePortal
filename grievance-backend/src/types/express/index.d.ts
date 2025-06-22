@@ -12,13 +12,13 @@ declare global {
         role?: string;
       };
       admin?: {
-        adminid: string;
-        name: string;
-        email: string;
-        role: string;
-        campus?: string;
-        department?: string;
-        isactive?: boolean;
+        AdminId: string;
+        Name: string;
+        Email: string;
+        Role: string;
+        CampusId?: number;
+        Department?: string;
+        IsActive?: boolean;
       };
       User?: PersonalInfo; // Use correct type for User
     }

@@ -1,15 +1,16 @@
-export interface AdminInfo{
-    id?: number;
-    Adminid?: number;
-    name: string;
-    email: string;
-    phone?: string;
-    password?: string;
-    isverified?: boolean;
+export interface AdminInfo {
+    ID?: number;
+    AdminID?: string;
+    Name: string;
+    Email: string;
+    Phone?: string;
+    Password?: string;
+    Role?: 'admin' | 'superadmin' | 'deptadmin';
+    IsVerified?: boolean;
     IsActive: boolean;
     LastLogin?: Date;
-    createdat?: Date;
-    updatedat?: Date;
-    role?: 'ADMIN' | 'SUPER_ADMIN';
+    CreatedAt?: Date;
+    UpdatedAt?: Date;
+    CampusId?: number;
     permissions?: string[]; // Array of permission strings
 }

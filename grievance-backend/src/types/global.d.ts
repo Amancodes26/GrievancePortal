@@ -16,17 +16,6 @@ declare global {
         role?: string;
       };
       
-      // Admin information set by admin authentication middleware
-      admin?: {
-        adminid: string;
-        name: string;
-        email: string;
-        role: string;
-        campus?: string;
-        department?: string;
-        isactive?: boolean;
-      };
-      
       // Full user object set by authentication middleware
       User?: PersonalInfo;
     }

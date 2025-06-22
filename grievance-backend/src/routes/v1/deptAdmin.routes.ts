@@ -5,10 +5,18 @@ import {
   rejectGrievance,
   redirectGrievance,
   updateGrievanceStatus,
-  getDepartmentStats
+  getDepartmentStats,
+  getAdminCampuses,
+  getMainCampusDepartmentAdmins
 } from '../../controllers/Admin/DeptAdmin.controller';
 import { verifyAdminJWT } from '../../middlewares/adminAuth.middleware';
 import { permit } from '../../middlewares/role.middleware';
+import { adminActionRateLimit } from '../../middlewares/rateLimit.middleware';
+import { 
+  auditGrievanceResponse, 
+  auditGrievanceRedirect,
+  auditSystemAccess 
+} from '../../middlewares/audit.middleware';
 
 const router = Router();
 
@@ -21,11 +29,72 @@ function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => P
 
 // All department admin routes require authentication and proper role
 // Department Admin routes - JWT authentication required
-router.get('/grievances', verifyAdminJWT, permit('deptadmin', 'superadmin'), asyncHandler(getDepartmentGrievances));                    
-router.post('/grievances/:grievanceId/response', verifyAdminJWT, permit('deptadmin', 'superadmin'), asyncHandler(addResponseToGrievance)); 
-router.put('/grievances/:grievanceId/reject', verifyAdminJWT, permit('deptadmin', 'superadmin'), asyncHandler(rejectGrievance));           
-router.put('/grievances/:grievanceId/redirect', verifyAdminJWT, permit('deptadmin', 'superadmin'), asyncHandler(redirectGrievance));       
-router.put('/grievances/:grievanceId/status', verifyAdminJWT, permit('deptadmin', 'superadmin'), asyncHandler(updateGrievanceStatus));     
-router.get('/stats', verifyAdminJWT, permit('deptadmin', 'superadmin'), asyncHandler(getDepartmentStats));
+
+// Grievance Management Routes
+router.get('/grievances', 
+  verifyAdminJWT, 
+  permit('academic', 'exam', 'campus', 'superadmin'), 
+  adminActionRateLimit,
+  auditSystemAccess,
+  asyncHandler(getDepartmentGrievances)
+);
+
+router.post('/grievances/:grievanceId/response', 
+  verifyAdminJWT, 
+  permit('academic', 'exam', 'campus', 'superadmin'), 
+  adminActionRateLimit,
+  auditGrievanceResponse,
+  asyncHandler(addResponseToGrievance)
+);
+
+router.put('/grievances/:grievanceId/reject', 
+  verifyAdminJWT, 
+  permit('academic', 'exam', 'campus', 'superadmin'), 
+  adminActionRateLimit,
+  auditGrievanceResponse,
+  asyncHandler(rejectGrievance)
+);
+
+router.put('/grievances/:grievanceId/redirect', 
+  verifyAdminJWT, 
+  permit('academic', 'exam', 'campus', 'superadmin'), 
+  adminActionRateLimit,
+  auditGrievanceRedirect,
+  asyncHandler(redirectGrievance)
+);
+
+router.put('/grievances/:grievanceId/status', 
+  verifyAdminJWT, 
+  permit('academic', 'exam', 'campus', 'superadmin'), 
+  adminActionRateLimit,
+  auditGrievanceResponse,
+  asyncHandler(updateGrievanceStatus)
+);
+
+// Statistics and Analytics Routes
+router.get('/stats', 
+  verifyAdminJWT, 
+  permit('academic', 'exam', 'campus', 'superadmin'), 
+  adminActionRateLimit,
+  auditSystemAccess,
+  asyncHandler(getDepartmentStats)
+);
+
+// Campus and Admin Management Routes
+router.get('/campuses', 
+  verifyAdminJWT, 
+  permit('academic', 'exam', 'campus', 'superadmin'), 
+  adminActionRateLimit,
+  auditSystemAccess,
+  asyncHandler(getAdminCampuses)
+);
+
+router.get('/main-campus/:department/admins', 
+  verifyAdminJWT, 
+  permit('academic', 'exam', 'campus', 'superadmin'), 
+  adminActionRateLimit,
+  auditSystemAccess,
+  asyncHandler(getMainCampusDepartmentAdmins)
+);
 
 export default router;

@@ -865,85 +865,15 @@ export const GrievanceHistoryQueries = {
   `
 };
 
-// Attachment CRUD queries (updated for Vercel compatibility)
+// Attachment CRUD queries (file-based storage only)
 export const AttachmentQueries = {
   CREATE: `
     INSERT INTO attachment (
-      Issuse_Id, FileName, OriginalFileName, FilePath, FileData, MimeType, FileSize, UploadedBy
+      Issuse_Id, FileName, OriginalFileName, FilePath, MimeType, FileSize, UploadedBy
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8
-    ) RETURNING id, Issuse_Id, FileName, OriginalFileName, MimeType, FileSize, UploadedBy, UploadedAt
+      $1, $2, $3, $4, $5, $6, $7
+    ) RETURNING id, Issuse_Id, FileName, OriginalFileName, FilePath, MimeType, FileSize, UploadedBy, UploadedAt
   `,
-  
-  // Create with memory storage (no file path)
-  createAttachment: async (data: {
-    issue_id: number;
-    filename: string;
-    original_filename: string;
-    mimetype: string;
-    size: number;
-    file_data: string;
-    uploaded_by: string;
-    upload_date: Date;
-  }) => {
-    const query = `
-      INSERT INTO attachment (
-        Issuse_Id, FileName, OriginalFileName, FileData, MimeType, FileSize, UploadedBy, UploadedAt
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8
-      ) RETURNING id as attachment_id, Issuse_Id as issue_id, FileName as filename, 
-                 OriginalFileName as original_filename, MimeType as mimetype, 
-                 FileSize as size, UploadedBy as uploaded_by, UploadedAt as upload_date
-    `;
-    const values = [
-      data.issue_id,
-      data.filename,
-      data.original_filename,
-      data.file_data,
-      data.mimetype,
-      data.size,
-      data.uploaded_by,
-      data.upload_date
-    ];
-    const result = await db.query(query, values);
-    return result.rows[0]?.attachment_id;
-  },
-
-  // Get attachment by ID with file data
-  getAttachmentById: async (attachment_id: number) => {
-    const query = `
-      SELECT id as attachment_id, Issuse_Id as issue_id, FileName as filename,
-             OriginalFileName as original_filename, FilePath as filepath,
-             FileData as file_data, MimeType as mimetype, FileSize as size,
-             UploadedBy as uploaded_by, UploadedAt as upload_date
-      FROM attachment 
-      WHERE id = $1
-    `;
-    const result = await db.query(query, [attachment_id]);
-    return result.rows[0];
-  },
-
-  // Get attachments by issue ID (without file data for performance)
-  getAttachmentsByIssueId: async (issue_id: number) => {
-    const query = `
-      SELECT id as attachment_id, Issuse_Id as issue_id, FileName as filename,
-             OriginalFileName as original_filename, FilePath as filepath,
-             MimeType as mimetype, FileSize as size,
-             UploadedBy as uploaded_by, UploadedAt as upload_date
-      FROM attachment 
-      WHERE Issuse_Id = $1 
-      ORDER BY UploadedAt DESC
-    `;
-    const result = await db.query(query, [issue_id]);
-    return result.rows;
-  },
-
-  // Delete attachment
-  deleteAttachment: async (attachment_id: number) => {
-    const query = `DELETE FROM attachment WHERE id = $1 RETURNING *`;
-    const result = await db.query(query, [attachment_id]);
-    return result.rows[0];
-  },
 
   GET_BY_ISSUE_ID: `
     SELECT * FROM attachment WHERE Issuse_Id = $1 ORDER BY UploadedAt DESC
