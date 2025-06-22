@@ -4,7 +4,7 @@ import ConnectionManager, { logPoolStatus } from '../db/connectionManager';
 /**
  * Middleware to monitor database connection pool
  */
-export function poolMonitorMiddleware(req: Request, res: Response, next: NextFunction) {
+export function poolMonitorMiddleware(req: Request, res: Response, next: NextFunction): void {
   const status = ConnectionManager.getPoolStatus();
   
   // Log warning if pool is getting full (reduced threshold)
@@ -15,11 +15,12 @@ export function poolMonitorMiddleware(req: Request, res: Response, next: NextFun
   // Reject requests if pool is nearly exhausted
   if (status.totalCount - status.idleCount > 12) {
     console.error(`🚨 Database connection pool nearly exhausted: ${status.totalCount - status.idleCount}/15 in use`);
-    return res.status(503).json({
+    res.status(503).json({
       success: false,
       message: 'Service temporarily unavailable - database connection pool exhausted',
       error: 'Please try again in a few seconds'
     });
+    return;
   }
   
   // Add pool status to response headers for debugging
@@ -67,30 +68,33 @@ export async function getPoolStatus(req: Request, res: Response) {
 /**
  * Express error handler for database connection errors
  */
-export function databaseErrorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+export function databaseErrorHandler(err: any, req: Request, res: Response, next: NextFunction): void {
   if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
-    return res.status(503).json({
+    res.status(503).json({
       success: false,
       message: 'Database connection failed',
       error: 'Service temporarily unavailable'
     });
+    return;
   }
   
   if (err.message && err.message.includes('too many clients already')) {
     logPoolStatus(); // Log current pool status
-    return res.status(503).json({
+    res.status(503).json({
       success: false,
       message: 'Database connection pool exhausted',
       error: 'Service temporarily unavailable - please try again shortly'
     });
+    return;
   }
   
   if (err.code === '08006' || err.code === '08001') { // PostgreSQL connection errors
-    return res.status(503).json({
+    res.status(503).json({
       success: false,
       message: 'Database connection error',
       error: 'Service temporarily unavailable'
     });
+    return;
   }
   
   next(err);

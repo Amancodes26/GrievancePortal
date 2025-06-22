@@ -327,17 +327,16 @@ export const getAttachmentsByIssueId = async (req: Request, res: Response, next:
         file_exists: fileExists,
         size: fileExists ? fs.statSync(attachment.filepath).size : 0
       };
-    });
-
-    res.status(200).json({
+    });    res.status(200).json({
       message: 'Attachments retrieved successfully',
       data: attachments,
       total_attachments: attachments.length,
       success: true
     });
+    return;
   } catch (error: unknown) {
     console.error(`[SECURITY] Error retrieving attachments for ${req.User?.rollno || 'anonymous'}:`, error);
-    res.status(500).json({
+    return res.status(500).json({
       message: 'Error retrieving attachments',
       error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : 'Internal server error',
       success: false
@@ -440,9 +439,10 @@ export const downloadAttachment = async (req: Request, res: Response, next: Next
     });
     
     fileStream.pipe(res);
+    return;
   } catch (error: unknown) {
     console.error(`[SECURITY] Download error for ${req.User?.rollno || 'anonymous'}:`, error);
-    res.status(500).json({
+    return res.status(500).json({
       message: 'Error downloading attachment',
       error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : 'Internal server error',
       success: false
@@ -533,9 +533,7 @@ export const deleteAttachment = async (req: Request, res: Response, next: NextFu
     }
 
     // Log deletion for security monitoring
-    console.log(`[SECURITY] Attachment deleted: ${attachment.filename} by ${userRollno} at ${new Date().toISOString()}`);
-
-    res.status(200).json({
+    console.log(`[SECURITY] Attachment deleted: ${attachment.filename} by ${userRollno} at ${new Date().toISOString()}`);    res.status(200).json({
       message: 'Attachment deleted successfully',
       data: {
         deleted_file: attachment.filename,
@@ -543,9 +541,10 @@ export const deleteAttachment = async (req: Request, res: Response, next: NextFu
       },
       success: true
     });
+    return;
   } catch (error: unknown) {
     console.error(`[SECURITY] Delete error for ${req.User?.rollno || 'anonymous'}:`, error);
-    res.status(500).json({
+    return res.status(500).json({
       message: 'Error deleting attachment',
       error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : 'Internal server error',
       success: false
@@ -620,9 +619,7 @@ export const getAttachmentById = async (req: Request, res: Response, next: NextF
       // Simulate virus scan
       const virusScan = await simulateVirusScan(attachment.filepath);
       securityStatus.virus_scan = virusScan.isClean ? 'clean' : 'threat_detected';
-    }
-
-    res.status(200).json({
+    }    res.status(200).json({
       message: 'Attachment details retrieved successfully',
       data: {
         id: attachment.id,
@@ -637,9 +634,10 @@ export const getAttachmentById = async (req: Request, res: Response, next: NextF
       },
       success: true
     });
+    return;
   } catch (error: unknown) {
     console.error(`[SECURITY] Metadata error for ${req.User?.rollno || 'anonymous'}:`, error);
-    res.status(500).json({
+    return res.status(500).json({
       message: 'Error retrieving attachment details',
       error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : 'Internal server error',
       success: false
@@ -680,13 +678,13 @@ export const getAttachmentSystemHealth = async (req: Request, res: Response) => 
       fs.unlinkSync(testFile);
     } catch (error) {
       health.upload_directory.writable = false;
-    }
-
-    res.status(200).json({
+    }    res.status(200).json({
       message: 'Attachment service health check',
       data: health,
       success: true
-    });  } catch (error: unknown) {
+    });
+    return;
+  } catch (error: unknown) {
     res.status(500).json({
       message: 'Health check failed',
       error: error instanceof Error ? error.message : 'Unknown error',

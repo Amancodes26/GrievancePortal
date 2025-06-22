@@ -1,24 +1,33 @@
 {
   "name": "grievance-backend",
   "version": "1.0.0",
-  "main": "index.js",  "scripts": {
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=18.x"
+  },  "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "vercel-build": "tsc",
-    "postinstall": "tsc"
+    "start:prod": "NODE_ENV=production node dist/index.js",
+    "vercel-build": "npm run build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
-  "dependencies": {
+  "description": "",  "dependencies": {
     "@types/ajv": "^0.0.5",
     "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
     "@types/dotenv": "^6.1.1",
+    "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.9",
+    "@types/multer": "^1.4.13",
+    "@types/node": "^24.0.1",
+    "@types/node-fetch": "^2.6.2",
     "@types/nodemailer": "^6.4.17",
+    "@types/otp-generator": "^4.0.2",
+    "@types/pg": "^8.15.4",
     "ajv": "^8.17.1",
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
@@ -33,23 +42,13 @@
     "nodemailer": "^7.0.3",
     "otp-generator": "^4.0.1",
     "pg": "^8.16.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
     "uuid": "^11.1.0",
     "zod": "^3.25.64"
-  },
-  "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/jsonwebtoken": "^9.0.9",
-    "@types/multer": "^1.4.13",
-    "@types/node": "^24.0.1",
-    "@types/node-fetch": "^2.6.2",
-    "@types/otp-generator": "^4.0.2",
-    "@types/pg": "^8.15.4",
+  },  "devDependencies": {
     "form-data": "^4.0.3",
     "node-fetch": "^2.6.7",
-    "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "nodemon": "^3.1.10"
   }
 }

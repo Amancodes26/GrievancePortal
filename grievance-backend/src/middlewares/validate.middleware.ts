@@ -5,13 +5,14 @@ const ajv = new Ajv({ allErrors: true });
 
 export function validate(schema: object) {
   const validateFn = ajv.compile(schema);
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const valid = validateFn(req.body);
     if (!valid) {
-      return res.status(400).json({
+      res.status(400).json({
         message: 'Validation failed',
         errors: validateFn.errors
       });
+      return;
     }
     next();
   };
