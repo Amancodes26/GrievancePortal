@@ -14,12 +14,15 @@ const pool = new Pool({
     ssl: {
         rejectUnauthorized: false,
     },
-    max: 15, // Reduced pool size to prevent exceeding database limits
-    min: 1,  // Reduced minimum connections
-    idleTimeoutMillis: 30000, // Reduced idle timeout to release connections faster
-    connectionTimeoutMillis: 10000, // Reduced connection timeout
-    // Add connection pool error handling
+    // Optimized for Vercel serverless functions
+    max: process.env.NODE_ENV === 'production' ? 5 : 15, // Smaller pool for production
+    min: 0,  // No minimum connections for serverless
+    idleTimeoutMillis: 10000, // Release idle connections quickly
+    connectionTimeoutMillis: 5000, // Faster timeout for serverless
     allowExitOnIdle: true, // Allow connections to be released when idle
+    // Additional serverless optimizations
+    statement_timeout: 30000, // 30 second query timeout
+    query_timeout: 30000, // 30 second query timeout
 });
 
 // Handle pool errors
