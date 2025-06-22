@@ -1,7 +1,7 @@
 import { Request, Response, RequestHandler } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import pool from "../db";
+import { getPool } from "../db";
 import { DatabaseService } from "../services/database";
 import { AdminOTPQueries } from "../db/queries";
 import { OTPService } from "../services/otpService";
@@ -22,7 +22,7 @@ export const simpleAdminLogin: RequestHandler = async (req, res) => {
   }
   
   try {
-    const result = await pool.query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [email]);
+    const result = await getPool().query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [email]);
     if (result.rows.length === 0) {
       res.status(401).json({ success: false, message: "Invalid email or password" });
       return;
@@ -78,7 +78,7 @@ export const adminLogin: RequestHandler = async (req, res) => {
     return;
   }
   try {
-    const result = await pool.query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [email]);
+    const result = await getPool().query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [email]);
     if (result.rows.length === 0) {
       res.status(401).json({ success: false, message: "Invalid email or password" });
       return;
@@ -120,7 +120,7 @@ export const verifyAdminOtp: RequestHandler = async (req, res) => {
     return;
   }
   try {    // Find admin by email
-    const result = await pool.query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [email]);
+    const result = await getPool().query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [email]);
     if (result.rows.length === 0) {
       res.status(404).json({ success: false, message: "Admin not found" });
       return;
@@ -184,13 +184,13 @@ export const setAdminPassword: RequestHandler = async (req, res) => {
     res.status(400).json({ success: false, message: "Email and new password are required" });
     return;
   }  try {
-    const result = await pool.query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [email]);
+    const result = await getPool().query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [email]);
     if (result.rows.length === 0) {
       res.status(404).json({ success: false, message: "Admin not found" });
       return;
     }    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
-    await pool.query(AdminOTPQueries.UPDATE_ADMIN_PASSWORD, [hashedPassword, email]);
+    await getPool().query(AdminOTPQueries.UPDATE_ADMIN_PASSWORD, [hashedPassword, email]);
     res.status(200).json({ success: true, message: "Password updated successfully" });
     return;
   } catch (err) {
@@ -210,7 +210,7 @@ export const resendAdminOtp: RequestHandler = async (req, res) => {
 
   try {
     // Find admin by email
-    const result = await pool.query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [email]);
+    const result = await getPool().query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [email]);
     if (result.rows.length === 0) {
       res.status(404).json({ success: false, message: "Admin not found" });
       return;

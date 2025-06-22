@@ -1,4 +1,4 @@
-import pool from '../db';
+import { getPool } from "../db";
 import ConnectionManager from '../db/connectionManager';
 import * as grievanceService from './grievance.service';
 import * as responseService from './response.service';
@@ -153,7 +153,7 @@ export class DeptAdminService {
       params.push(campusId);
     }
     
-    const result = await pool.query(query, params);
+    const result = await getPool().query(query, params);
     const stats = result.rows[0];
     
     // Get monthly stats
@@ -172,7 +172,7 @@ export class DeptAdminService {
     `;
     
     const monthlyParams = campusId ? [department.toUpperCase(), campusId] : [department.toUpperCase()];
-    const monthlyResult = await pool.query(monthlyQuery, monthlyParams);
+    const monthlyResult = await getPool().query(monthlyQuery, monthlyParams);
     
     return {
       department,
@@ -204,7 +204,7 @@ export class DeptAdminService {
     department: AdminRole
   ): Promise<boolean> {
     // Get admin info
-    const adminResult = await pool.query(
+    const adminResult = await getPool().query(
       'SELECT Role, CampusId FROM Admin WHERE AdminId = $1 AND IsActive = true',
       [adminId]
     );
@@ -233,7 +233,7 @@ export class DeptAdminService {
     
     // If admin has campus assignment, check campus match
     if (admin.CampusId) {
-      const campusResult = await pool.query(
+      const campusResult = await getPool().query(
         'SELECT CampusId FROM CampusInfo WHERE CampusCode = $1',
         [grievance.campus]
       );
@@ -250,7 +250,7 @@ export class DeptAdminService {
 
   // Get admin's assigned campuses
   static async getAdminCampuses(adminId: string): Promise<any[]> {
-    const result = await pool.query(`
+    const result = await getPool().query(`
       SELECT 
         aca.campus_id,
         c.CampusCode,

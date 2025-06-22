@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import pool from './index';
+import { getPool } from "./index";
 
 export async function setupDatabase(): Promise<void> {
   try {
@@ -9,7 +9,7 @@ export async function setupDatabase(): Promise<void> {
     const initSqlPath = join(__dirname, '../../database/init.sql');
     const initSql = readFileSync(initSqlPath, 'utf8');
     
-    await pool.query(initSql);
+    await getPool().query(initSql);
     
     console.log('Database setup completed successfully!');
     
@@ -99,7 +99,7 @@ export async function getTableStatusSimple(): Promise<Array<{table_name: string,
 
     for (const table of tables) {
       try {
-        const result = await pool.query(`SELECT COUNT(*) FROM ${table.table}`);
+        const result = await getPool().query(`SELECT COUNT(*) FROM ${table.table}`);
         results.push({
           table_name: table.name,
           record_count: result.rows[0].count
@@ -144,7 +144,7 @@ export async function resetDatabase(): Promise<void> {
     ];
 
     for (const table of dropOrder) {
-      await pool.query(`DROP TABLE IF EXISTS ${table} CASCADE`);
+      await getPool().query(`DROP TABLE IF EXISTS ${table} CASCADE`);
       console.log(`Dropped table: ${table}`);
     }
 
@@ -159,7 +159,7 @@ export async function resetDatabase(): Promise<void> {
 
 export async function checkTableExists(tableName: string): Promise<boolean> {
   try {
-    const result = await pool.query(`
+    const result = await getPool().query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
         WHERE table_schema = 'public' 

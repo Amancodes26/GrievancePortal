@@ -1,4 +1,4 @@
-import pool from './index';
+import { getPool } from './index';
 import { PoolClient } from 'pg';
 
 /**
@@ -14,9 +14,13 @@ export class ConnectionManager {
    * @returns Query result
    */
   static async query(query: string, params?: any[]) {
+    if (!getPool) {
+      throw new Error('Database not available. Check environment variables.');
+    }
+    
     const start = Date.now();
     try {
-      const result = await pool.query(query, params);
+      const result = await getPool().query(query, params);
       const duration = Date.now() - start;
       
       if (process.env.LOG_QUERIES === 'true') {
@@ -39,7 +43,11 @@ export class ConnectionManager {
   static async transaction<T>(
     queryFn: (client: PoolClient) => Promise<T>
   ): Promise<T> {
-    const client = await pool.connect();
+    if (!getPool) {
+      throw new Error('Database not available. Check environment variables.');
+    }
+    
+    const client = await getPool().connect();
     const start = Date.now();
     
     try {
@@ -67,10 +75,22 @@ export class ConnectionManager {
    * Get pool status for monitoring
    */
   static getPoolStatus() {
+    if (!getPool) {
+      return {
+        totalCount: 0,
+        idleCount: 0,
+        waitingCount: 0,
+        available: false,
+        error: 'Database not available. Check environment variables.'
+      };
+    }
+    
+    const pool = getPool();
     return {
       totalCount: pool.totalCount,
       idleCount: pool.idleCount,
       waitingCount: pool.waitingCount,
+      available: true
     };
   }
 
@@ -78,8 +98,12 @@ export class ConnectionManager {
    * Check if pool is healthy
    */
   static async healthCheck(): Promise<boolean> {
+    if (!getPool) {
+      return false;
+    }
+    
     try {
-      const client = await pool.connect();
+      const client = await getPool().connect();
       await client.query('SELECT 1');
       client.release();
       return true;
@@ -94,12 +118,16 @@ export class ConnectionManager {
    * Use this when you need manual client management
    */
   static async getClient(timeoutMs: number = 30000): Promise<PoolClient> {
+    if (!getPool) {
+      throw new Error('Database not available. Check environment variables.');
+    }
+    
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error(`Connection timeout after ${timeoutMs}ms`));
       }, timeoutMs);
 
-      pool.connect()
+      getPool().connect()
         .then(client => {
           clearTimeout(timeout);
           resolve(client);
@@ -117,19 +145,23 @@ export class ConnectionManager {
  */
 export function logPoolStatus() {
   const status = ConnectionManager.getPoolStatus();
-  console.log('🔌 Pool Status:', {
-    total: status.totalCount,
-    idle: status.idleCount,
-    waiting: status.waitingCount,
-    inUse: status.totalCount - status.idleCount
-  });
+  if (status.available) {
+    console.log('🔌 Pool Status:', {
+      total: status.totalCount,
+      idle: status.idleCount,
+      waiting: status.waitingCount,
+      inUse: status.totalCount - status.idleCount
+    });
+  } else {
+    console.log('🔌 Pool Status:', status.error);
+  }
 }
 
 // Log pool status every 30 seconds in development
 if (process.env.NODE_ENV !== 'production') {
   setInterval(() => {
     const status = ConnectionManager.getPoolStatus();
-    if (status.waitingCount > 0 || status.totalCount - status.idleCount > 10) {
+    if (status.available && (status.waitingCount > 0 || status.totalCount - status.idleCount > 10)) {
       console.warn('⚠️  Pool Status Warning:', {
         total: status.totalCount,
         idle: status.idleCount,

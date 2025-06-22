@@ -1,4 +1,4 @@
-import { db } from '../db/queries';
+import { getPool } from "../db";
 import { ResponseQueries } from '../db/queries';
 
 export async function createResponse(data: {
@@ -20,11 +20,11 @@ export async function createResponse(data: {
     data.redirect
   ];
 
-  const result = await db.query(ResponseQueries.CREATE, values);
+  const result = await getPool().query(ResponseQueries.CREATE, values);
   const newResponse = result.rows[0];
   
   // Get the grievance to fetch the actual issue_id (string) for response
-  const grievanceResult = await db.query(`SELECT Issuse_Id FROM grievance WHERE id = $1`, [data.issue_id]);
+  const grievanceResult = await getPool().query(`SELECT Issuse_Id FROM grievance WHERE id = $1`, [data.issue_id]);
   if (grievanceResult.rows[0]) {
     newResponse.issue_id = grievanceResult.rows[0].issuse_id; // Replace with string issue_id
   }
@@ -33,16 +33,16 @@ export async function createResponse(data: {
 }
 
 export async function getResponsesByIssueId(issueId: string) {
-  const result = await db.query(ResponseQueries.GET_BY_ISSUE_ID, [issueId]);
+  const result = await getPool().query(ResponseQueries.GET_BY_ISSUE_ID, [issueId]);
   return result.rows;
 }
 
 export async function getAllResponses() {
-  const result = await db.query(ResponseQueries.GET_ALL);
+  const result = await getPool().query(ResponseQueries.GET_ALL);
   return result.rows;
 }
 
 export async function deleteResponse(id: string) {
-  const result = await db.query(ResponseQueries.DELETE, [id]);
+  const result = await getPool().query(ResponseQueries.DELETE, [id]);
   return result.rows[0];
 }

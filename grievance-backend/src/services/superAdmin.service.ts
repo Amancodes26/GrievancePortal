@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import pool from '../db';
+import { getPool } from "../db";
 import { AdminRole, AdminInfo, AdminCampusAssignment, AdminAuditLog } from '../types/common';
 
 interface CreateAdminInput {
@@ -34,7 +34,7 @@ export class SuperAdminService {
   
   // Create a new admin with campus assignment
   static async createAdmin({ name, email, phone, password, role, campusId, isMainCampus }: CreateAdminInput): Promise<AdminInfo> {
-    const client = await pool.connect();
+    const client = await getPool().connect();
     
     try {
       await client.query('BEGIN');
@@ -82,7 +82,7 @@ export class SuperAdminService {
 
   // Assign admin to campus
   static async assignAdminToCampus({ adminId, campusId, department, isPrimary = false }: AdminCampusAssignmentInput): Promise<AdminCampusAssignment> {
-    const result = await pool.query(
+    const result = await getPool().query(
       `INSERT INTO Admin_Campus_Assignment (admin_id, campus_id, department, is_primary)
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (admin_id, campus_id, department) 
@@ -96,7 +96,7 @@ export class SuperAdminService {
 
   // Get all admins with their campus assignments
   static async getAllAdmins(): Promise<AdminInfo[]> {
-    const result = await pool.query(`
+    const result = await getPool().query(`
       SELECT 
         a.AdminId, a.Name, a.Email, a.Role, a.CampusId, a.IsActive, a.CreatedAt, a.UpdatedAt,
         c.CampusCode, c.CampusName,
@@ -114,7 +114,7 @@ export class SuperAdminService {
 
   // Get admins by campus
   static async getAdminsByCampus(campusId: number): Promise<AdminInfo[]> {
-    const result = await pool.query(`
+    const result = await getPool().query(`
       SELECT 
         a.AdminId, a.Name, a.Email, a.Role, a.CampusId, a.IsActive, a.CreatedAt, a.UpdatedAt,
         c.CampusCode, c.CampusName
@@ -129,7 +129,7 @@ export class SuperAdminService {
 
   // Get department admins for a specific campus
   static async getDepartmentAdminsByCampus(campusId: number, department: AdminRole): Promise<AdminInfo[]> {
-    const result = await pool.query(`
+    const result = await getPool().query(`
       SELECT 
         a.AdminId, a.Name, a.Email, a.Role, a.CampusId, a.IsActive, a.CreatedAt, a.UpdatedAt,
         c.CampusCode, c.CampusName
@@ -149,7 +149,7 @@ export class SuperAdminService {
 
   // Get all campuses with their admin counts
   static async getCampusAdminStats(): Promise<any[]> {
-    const result = await pool.query(`
+    const result = await getPool().query(`
       SELECT 
         c.CampusId, c.CampusCode, c.CampusName,
         COUNT(DISTINCT a.AdminId) as total_admins,
@@ -209,7 +209,7 @@ export class SuperAdminService {
       RETURNING *
     `;
 
-    const result = await pool.query(query, [adminId, ...values]);
+    const result = await getPool().query(query, [adminId, ...values]);
     
     if (result.rows.length === 0) {
       throw new Error('Admin not found');
@@ -220,7 +220,7 @@ export class SuperAdminService {
 
   // Deactivate admin
   static async deactivateAdmin(adminId: string): Promise<void> {
-    const result = await pool.query(
+    const result = await getPool().query(
       'UPDATE Admin SET IsActive = false, UpdatedAt = NOW() WHERE AdminId = $1',
       [adminId]
     );
@@ -232,7 +232,7 @@ export class SuperAdminService {
 
   // Log admin action
   static async logAdminAction({ adminId, actionType, actionDetails, ipAddress, userAgent }: AuditLogInput): Promise<void> {
-    await pool.query(
+    await getPool().query(
       `INSERT INTO Admin_Audit_Log (admin_id, action_type, action_details, ip_address, user_agent)
        VALUES ($1, $2, $3, $4, $5)`,
       [adminId, actionType, JSON.stringify(actionDetails), ipAddress, userAgent]
@@ -254,7 +254,7 @@ export class SuperAdminService {
     query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
     params.push(limit, offset);
     
-    const result = await pool.query(query, params);
+    const result = await getPool().query(query, params);
     return result.rows;
   }
 
@@ -267,10 +267,10 @@ export class SuperAdminService {
       activeGrievanceCount,
       campusStats
     ] = await Promise.all([
-      pool.query('SELECT COUNT(*) as count FROM Admin WHERE IsActive = true'),
-      pool.query('SELECT COUNT(*) as count FROM CampusInfo'),
-      pool.query('SELECT COUNT(*) as count FROM Grievance'),
-      pool.query('SELECT COUNT(*) as count FROM Grievance WHERE Status IN (\'PENDING\', \'IN_PROGRESS\')'),
+      getPool().query('SELECT COUNT(*) as count FROM Admin WHERE IsActive = true'),
+      getPool().query('SELECT COUNT(*) as count FROM CampusInfo'),
+      getPool().query('SELECT COUNT(*) as count FROM Grievance'),
+      getPool().query('SELECT COUNT(*) as count FROM Grievance WHERE Status IN (\'PENDING\', \'IN_PROGRESS\')'),
       this.getCampusAdminStats()
     ]);
 

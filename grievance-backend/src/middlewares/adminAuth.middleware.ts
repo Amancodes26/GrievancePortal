@@ -1,6 +1,6 @@
 import { Response, Request, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import pool from "../db";
+import { getPool } from "../db";
 import { AdminOTPQueries } from "../db/queries";
 // Type augmentation is handled automatically by the TypeScript compiler
 // No need to import the type declaration file at runtime
@@ -70,7 +70,7 @@ export const verifyAdminJWT = async (req: Request, res: Response, next: NextFunc
       });
       return;
     }    // Find the admin associated with the token
-    const result = await pool.query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [decoded.email]);
+    const result = await getPool().query(AdminOTPQueries.FIND_BY_ADMIN_EMAIL, [decoded.email]);
 
     // console.log("Admin email:", decoded.email);
     console.log("Database query result for admin:", result.rows);

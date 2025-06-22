@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import { db } from '../db/queries';
+import { getPool } from "../db";
 import { AttachmentQueries } from '../db/queries';
 import * as grievanceService from '../services/grievance.service';
 
@@ -239,7 +239,7 @@ export const uploadAttachment = async (req: Request, res: Response, next: NextFu
     }
 
     // Limit attachments per grievance
-    const existing = await db.query(AttachmentQueries.GET_BY_ISSUE_ID, [grievance.id]);
+    const existing = await getPool().query(AttachmentQueries.GET_BY_ISSUE_ID, [grievance.id]);
     if (existing.rows.length >= 3) {
       fs.unlinkSync(req.file.path);
       res.status(400).json({ message: 'Maximum 3 attachments allowed.' });
@@ -247,7 +247,7 @@ export const uploadAttachment = async (req: Request, res: Response, next: NextFu
     }
 
     // Save to DB (make sure your query matches this order!)
-    const result = await db.query(AttachmentQueries.CREATE, [
+    const result = await getPool().query(AttachmentQueries.CREATE, [
       grievance.id,
       req.file.filename,
       req.file.originalname,
@@ -311,7 +311,7 @@ export const getAttachmentsByIssueId = async (req: Request, res: Response, next:
     }
 
     // Get attachments using database ID
-    const result = await db.query(AttachmentQueries.GET_BY_ISSUE_ID, [grievance.id]);
+    const result = await getPool().query(AttachmentQueries.GET_BY_ISSUE_ID, [grievance.id]);
     const attachments = result.rows.map((attachment: any) => {
       // Check if file still exists on disk
       const fileExists = fs.existsSync(attachment.filepath);
@@ -367,7 +367,7 @@ export const downloadAttachment = async (req: Request, res: Response, next: Next
       JOIN grievance g ON a.issuse_id = g.id 
       WHERE a.id = $1
     `;
-    const result = await db.query(attachmentQuery, [attachment_id]);
+    const result = await getPool().query(attachmentQuery, [attachment_id]);
     const attachment = result.rows[0];
 
     if (!attachment) {
@@ -479,7 +479,7 @@ export const deleteAttachment = async (req: Request, res: Response, next: NextFu
       JOIN grievance g ON a.issuse_id = g.id 
       WHERE a.id = $1
     `;
-    const result = await db.query(attachmentQuery, [attachment_id]);
+    const result = await getPool().query(attachmentQuery, [attachment_id]);
     const attachment = result.rows[0];
 
     if (!attachment) {
@@ -499,7 +499,7 @@ export const deleteAttachment = async (req: Request, res: Response, next: NextFu
     }
 
     // Check if grievance is still in editable state (optional business rule)
-    const grievanceResult = await db.query('SELECT status FROM grievance WHERE id = $1', [attachment.issuse_id]);
+    const grievanceResult = await getPool().query('SELECT status FROM grievance WHERE id = $1', [attachment.issuse_id]);
     const grievanceStatus = grievanceResult.rows[0]?.status;
     
     if (grievanceStatus === 'RESOLVED' || grievanceStatus === 'CLOSED') {
@@ -510,7 +510,7 @@ export const deleteAttachment = async (req: Request, res: Response, next: NextFu
     }
 
     // Delete from database first
-    await db.query(AttachmentQueries.DELETE, [attachment_id]);
+    await getPool().query(AttachmentQueries.DELETE, [attachment_id]);
 
     // Secure file deletion
     if (fs.existsSync(attachment.filepath)) {
@@ -527,7 +527,7 @@ export const deleteAttachment = async (req: Request, res: Response, next: NextFu
     }
 
     // Update grievance attachment flag if no more attachments
-    const remainingAttachments = await db.query(AttachmentQueries.GET_BY_ISSUE_ID, [attachment.issuse_id]);
+    const remainingAttachments = await getPool().query(AttachmentQueries.GET_BY_ISSUE_ID, [attachment.issuse_id]);
     if (remainingAttachments.rows.length === 0) {
       await grievanceService.updateGrievanceByIssueId(attachment.issuse_id, { attachment: 'false' });
     }
@@ -575,7 +575,7 @@ export const getAttachmentById = async (req: Request, res: Response, next: NextF
       JOIN grievance g ON a.issuse_id = g.id 
       WHERE a.id = $1
     `;
-    const result = await db.query(attachmentQuery, [attachment_id]);
+    const result = await getPool().query(attachmentQuery, [attachment_id]);
     const attachment = result.rows[0];
 
     if (!attachment) {

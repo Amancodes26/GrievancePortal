@@ -5,14 +5,41 @@ import { setupDatabase, checkAllTablesExistSimple, getTableStatusSimple, resetDa
 import { config } from "dotenv";
 config();
 
-const pool = new Pool({
+// Check for required environment variables
+const requiredEnvVars = ['PGHOST', 'PGPASSWORD'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingEnvVars);
+  console.error('Please set the following environment variables in your Vercel deployment:');
+  missingEnvVars.forEach(varName => {
+    console.error(`  - ${varName}`);
+  });
+  
+  // Create a mock pool for development/testing when env vars are missing
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('⚠️  Running in development mode with mock database connection');
+  } else {
+    console.error('❌ Cannot proceed without required environment variables');
+    // Don't exit in serverless environment, let the app handle it gracefully
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1);
+    }
+  }
+}
+
+// Create pool only if we have the required environment variables
+let pool: Pool | null = null;
+
+if (missingEnvVars.length === 0) {
+  pool = new Pool({
     user: process.env.PGUSER || 'avnadmin',
     host: process.env.PGHOST,
     database: process.env.PGDATABASE || 'grievance',
     password: process.env.PGPASSWORD,
     port: Number(process.env.PGPORT) || 26066,
     ssl: {
-        rejectUnauthorized: false,
+      rejectUnauthorized: false,
     },
     // Optimized for Vercel serverless functions
     max: process.env.NODE_ENV === 'production' ? 5 : 15, // Smaller pool for production
@@ -23,110 +50,133 @@ const pool = new Pool({
     // Additional serverless optimizations
     statement_timeout: 30000, // 30 second query timeout
     query_timeout: 30000, // 30 second query timeout
-});
+  });
 
-// Handle pool errors
-pool.on('error', (err) => {
+  // Handle pool errors
+  pool.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
-    process.exit(-1);
-});
+    // Don't exit in serverless environment
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(-1);
+    }
+  });
 
-// Handle pool connect events
-pool.on('connect', (client) => {
+  // Handle pool connect events
+  pool.on('connect', (client) => {
     console.log('🔗 New database connection established');
-});
+  });
 
-pool.on('remove', (client) => {
+  pool.on('remove', (client) => {
     console.log('🔌 Database connection removed from pool');
-});
+  });
 
-// Simple query logging with one environment variable
-if (process.env.LOG_QUERIES === 'true') {
+  // Simple query logging with one environment variable
+  if (process.env.LOG_QUERIES === 'true') {
     const originalQuery = pool.query.bind(pool);
     pool.query = (text: any, params?: any) => {
-        const query = typeof text === 'string' ? text : text.text;
-        console.log('🔍 SQL:', query);
-        if (params && params.length > 0) {
-            console.log('📝 Params:', params);
-            // Show actual query with parameters substituted
-            let actualQuery = query;
-            interface QueryParam {
-                value: string | number | boolean | Date | null | undefined;
-            }
-
-            interface FormattedParam {
-                placeholder: string;
-                value: string;
-            }
-
-            params.forEach((param: QueryParam['value'], index: number) => {
-                const placeholder: string = `$${index + 1}`;
-                let value: string = param as string;
-                
-                // Format different data types for display
-                if (typeof param === 'string') {
-                    value = `'${param.replace(/'/g, "''")}'`;
-                } else if (param === null || param === undefined) {
-                    value = 'NULL';
-                } else if (param instanceof Date) {
-                    value = `'${param.toISOString()}'`;
-                } else if (typeof param === 'boolean') {
-                    value = param ? 'TRUE' : 'FALSE';
-                }
-                
-                actualQuery = actualQuery.replace(new RegExp(`\\${placeholder}\\b`, 'g'), String(value));
-            });
-            console.log('🔗 Actual Query:', actualQuery);
+      const query = typeof text === 'string' ? text : text.text;
+      console.log('🔍 SQL:', query);
+      if (params && params.length > 0) {
+        console.log('📝 Params:', params);
+        // Show actual query with parameters substituted
+        let actualQuery = query;
+        interface QueryParam {
+          value: string | number | boolean | Date | null | undefined;
         }
-        return originalQuery(text, params);
+
+        interface FormattedParam {
+          placeholder: string;
+          value: string;
+        }
+
+        params.forEach((param: QueryParam['value'], index: number) => {
+          const placeholder: string = `$${index + 1}`;
+          let value: string = param as string;
+          
+          // Format different data types for display
+          if (typeof param === 'string') {
+            value = `'${param.replace(/'/g, "''")}'`;
+          } else if (param === null || param === undefined) {
+            value = 'NULL';
+          } else if (param instanceof Date) {
+            value = `'${param.toISOString()}'`;
+          } else if (typeof param === 'boolean') {
+            value = param ? 'TRUE' : 'FALSE';
+          }
+          
+          actualQuery = actualQuery.replace(new RegExp(`\\${placeholder}\\b`, 'g'), String(value));
+        });
+        console.log('🔗 Actual Query:', actualQuery);
+      }
+      return originalQuery(text, params);
     };
+  }
 }
 
+// Export a function to get the pool safely
+export function getPool(): Pool {
+  if (!pool) {
+    throw new Error('Database pool not initialized. Check environment variables.');
+  }
+  return pool;
+}
+
+// Export pool as default for backward compatibility
 export default pool;
 
-// Test the database connection when the app starts
-pool.connect()
+// Test the database connection when the app starts (only if pool exists)
+if (pool) {
+  pool.connect()
     .then(async (client) => {
-        console.log("✅ Connected to PostgreSQL database successfully.");
-        client.release();
-        // Check if all required tables exist using simple approach
-        const allTablesExist = await checkAllTablesExistSimple();
-        if (!allTablesExist) {
-            console.log("⚠️  Some tables are missing. Setting up database...");
-            await setupDatabase();
-        } else {
-            console.log("✅ All required tables exist.");
-            
-            // Display current table status
-            const tableStatus = await getTableStatusSimple();
-            console.log('📊 Current Database Status:');
-            tableStatus.forEach(row => {
-                console.log(`   ${row.table_name}: ${row.record_count} records`);
-            });
-        }
+      console.log("✅ Connected to PostgreSQL database successfully.");
+      client.release();
+      // Check if all required tables exist using simple approach
+      const allTablesExist = await checkAllTablesExistSimple();
+      if (!allTablesExist) {
+        console.log("⚠️  Some tables are missing. Setting up database...");
+        await setupDatabase();
+      } else {
+        console.log("✅ All required tables exist.");
+        
+        // Display current table status
+        const tableStatus = await getTableStatusSimple();
+        console.log('📊 Current Database Status:');
+        tableStatus.forEach(row => {
+          console.log(`   ${row.table_name}: ${row.record_count} records`);
+        });
+      }
     })
     .catch((err) => {
-        console.error("❌ Failed to connect to PostgreSQL database:", err);
+      console.error("❌ Failed to connect to PostgreSQL database:", err);
+      // Don't exit in serverless environment
+      if (process.env.NODE_ENV !== 'production') {
+        console.error("Exiting due to database connection failure");
+      }
     });
+} else {
+  console.warn("⚠️  Database pool not initialized - skipping connection test");
+}
 
 // Graceful shutdown function
 export async function closePool() {
+  if (pool) {
     console.log('🔄 Closing database pool...');
     await pool.end();
     console.log('✅ Database pool closed successfully');
+  }
 }
 
 // Handle process termination
 process.on('SIGINT', async () => {
-    console.log('\n🛑 Received SIGINT, shutting down gracefully...');
-    await closePool();
-    process.exit(0);
+  console.log('\n🛑 Received SIGINT, shutting down gracefully...');
+  await closePool();
+  process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-    console.log('\n🛑 Received SIGTERM, shutting down gracefully...');
-    await closePool();
-    process.exit(0);
+  console.log('\n🛑 Received SIGTERM, shutting down gracefully...');
+  await closePool();
+  process.exit(0);
 });
 
 // Export utility functions for database operations

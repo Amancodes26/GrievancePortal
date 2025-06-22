@@ -1,5 +1,5 @@
-import { db } from '../db/queries';
 import { GrievanceHistoryQueries } from '../db/queries';
+import { getPool } from "../db";
 
 export async function createHistory(data: {
   grievance_id: number; // This is the grievance database ID (numeric), not the string issue_id
@@ -19,16 +19,16 @@ export async function createHistory(data: {
     data.note
   ];
 
-  const result = await db.query(GrievanceHistoryQueries.CREATE, values);
+  const result = await getPool().query(GrievanceHistoryQueries.CREATE, values);
   return result.rows[0];
 }
 
 export async function getGrievanceHistory(grievance_id: string) {
-  const result = await db.query(GrievanceHistoryQueries.GET_BY_ISSUE_ID, [grievance_id]);
+  const result = await getPool().query(GrievanceHistoryQueries.GET_BY_ISSUE_ID, [grievance_id]);
   return result.rows;
 }
 
 export async function getRecentActions(limit = 10) {
-  const result = await db.query(GrievanceHistoryQueries.GET_ALL + ` LIMIT $1`, [limit]);
+  const result = await getPool().query(GrievanceHistoryQueries.GET_ALL + ` LIMIT $1`, [limit]);
   return result.rows;
 }

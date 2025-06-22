@@ -12,7 +12,7 @@ import { CourseProgram, CreateCourseProgramData, UpdateCourseProgramData } from 
 import { CourseProgramCrudQueries } from "../db/queries";
  
 // PersonalInfo CRUD
-import pool from "../db";
+import { getPool } from "../db";
 import ConnectionManager from "../db/connectionManager";
 import { AdminOTP, CreateAdminOTPData } from "../models/OTP";
 import { PersonalInfo, CreatePersonalInfoData, UpdatePersonalInfoData } from "../models/PersonalInfo";
@@ -70,12 +70,12 @@ export class DatabaseService {  // CourseProgram CRUD
 
   // CourseEval CRUD
   static async getAllCourseEval() {
-    const result = await pool.query(CourseEvalCrudQueries.GET_ALL);
+    const result = await ConnectionManager.query(CourseEvalCrudQueries.GET_ALL);
     return result.rows;
   }
 
   static async getCourseEvalById(id: number) {
-    const result = await pool.query(CourseEvalCrudQueries.GET_BY_ID, [id]);
+    const result = await getPool().query(CourseEvalCrudQueries.GET_BY_ID, [id]);
     return result.rows[0] || null;
   }
 
@@ -86,7 +86,7 @@ export class DatabaseService {  // CourseProgram CRUD
       data.Pract ?? 0,
       data.CompTypes ?? 'default',
     ];
-    const result = await pool.query(CourseEvalCrudQueries.CREATE, values);
+    const result = await getPool().query(CourseEvalCrudQueries.CREATE, values);
     return result.rows[0];
   }
 
@@ -95,28 +95,28 @@ export class DatabaseService {  // CourseProgram CRUD
     const fields = Object.keys(data);
     const values = [id, ...fields.map(f => (data as any)[f])];
     const query = CourseEvalCrudQueries.UPDATE(fields);
-    const result = await pool.query(query, values);
+    const result = await getPool().query(query, values);
     return result.rows[0] || null;
   }
 
   static async deleteCourseEval(id: number) {
-    const result = await pool.query(CourseEvalCrudQueries.DELETE, [id]);
+    const result = await getPool().query(CourseEvalCrudQueries.DELETE, [id]);
     return result.rows[0] || null;
   }
 
   // Course CRUD
   static async getAllCourses() {
-    const result = await pool.query(CourseCrudQueries.GET_ALL);
+    const result = await getPool().query(CourseCrudQueries.GET_ALL);
     return result.rows;
   }
 
   static async getCourseById(id: number) {
-    const result = await pool.query(CourseCrudQueries.GET_BY_ID, [id]);
+    const result = await getPool().query(CourseCrudQueries.GET_BY_ID, [id]);
     return result.rows[0] || null;
   }
 
   static async getCourseByCode(code: string) {
-    const result = await pool.query(CourseCrudQueries.GET_BY_CODE, [code]);
+    const result = await getPool().query(CourseCrudQueries.GET_BY_CODE, [code]);
     return result.rows[0] || null;
   }
 
@@ -128,7 +128,7 @@ export class DatabaseService {  // CourseProgram CRUD
       data.CourseType,
       data.Credit
     ];
-    const result = await pool.query(CourseCrudQueries.CREATE, values);
+    const result = await getPool().query(CourseCrudQueries.CREATE, values);
     return result.rows[0];
   }
 
@@ -138,23 +138,23 @@ export class DatabaseService {  // CourseProgram CRUD
     const fields = Object.keys(data);
     const values = [id, ...fields.map(f => (data as any)[f])];
     const query = CourseCrudQueries.UPDATE(fields);
-    const result = await pool.query(query, values);
+    const result = await getPool().query(query, values);
     return result.rows[0] || null;
   }
 
   static async deleteCourse(id: number) {
-    const result = await pool.query(CourseCrudQueries.DELETE, [id]);
+    const result = await getPool().query(CourseCrudQueries.DELETE, [id]);
     return result.rows[0] || null;
   }
 
   // ProgramOptions CRUD
   static async getAllProgramOptions() {
-    const result = await pool.query(ProgramOptionsCrudQueries.GET_ALL);
+    const result = await getPool().query(ProgramOptionsCrudQueries.GET_ALL);
     return result.rows;
   }
 
   static async getProgramOptionsByProgramIdTermBatch(programId: number, term: number, batch: number) {
-    const result = await pool.query(ProgramOptionsCrudQueries.GET_BY_PROGRAMID_TERM_BATCH, [programId, term, batch]);
+    const result = await getPool().query(ProgramOptionsCrudQueries.GET_BY_PROGRAMID_TERM_BATCH, [programId, term, batch]);
     return result.rows;
   }
 
@@ -165,7 +165,7 @@ export class DatabaseService {  // CourseProgram CRUD
       data.Batch,
       data.GradingType
     ];
-    const result = await pool.query(ProgramOptionsCrudQueries.CREATE, values);
+    const result = await getPool().query(ProgramOptionsCrudQueries.CREATE, values);
     return result.rows[0];
   }
 
@@ -178,22 +178,22 @@ export class DatabaseService {  // CourseProgram CRUD
     const fields = Object.keys(data);
     const values = [programId, term, batch, ...fields.map(f => (data as any)[f])];
     const query = ProgramOptionsCrudQueries.UPDATE_BY_PROGRAMID_TERM_BATCH(fields);
-    const result = await pool.query(query, values);
+    const result = await getPool().query(query, values);
     return result.rows[0] || null;
   }
 
   static async deleteProgramOptionsByProgramIdTermBatch(programId: number, term: number, batch: number) {
-    const result = await pool.query(ProgramOptionsCrudQueries.DELETE_BY_PROGRAMID_TERM_BATCH, [programId, term, batch]);
+    const result = await getPool().query(ProgramOptionsCrudQueries.DELETE_BY_PROGRAMID_TERM_BATCH, [programId, term, batch]);
     return result.rows[0] || null;
   }
   // AcademicInfo CRUD
   static async getAllAcademicInfo() {
-    const result = await pool.query(AcademicInfoCrudQueries.GET_ALL);
+    const result = await getPool().query(AcademicInfoCrudQueries.GET_ALL);
     return result.rows;
   }
 
   static async getAcademicInfoByRollNoAndTerm(rollno: string, term: number) {
-    const result = await pool.query(AcademicInfoCrudQueries.GET_BY_ROLLNO_AND_TERM, [rollno, term]);
+    const result = await getPool().query(AcademicInfoCrudQueries.GET_BY_ROLLNO_AND_TERM, [rollno, term]);
     return result.rows;
   }
 
@@ -206,7 +206,7 @@ export class DatabaseService {  // CourseProgram CRUD
       data.CampusId,
       data.Batch
     ];
-    const result = await pool.query(AcademicInfoCrudQueries.CREATE, values);
+    const result = await getPool().query(AcademicInfoCrudQueries.CREATE, values);
     return result.rows[0];
   }
 
@@ -218,12 +218,12 @@ export class DatabaseService {  // CourseProgram CRUD
     const fields = Object.keys(data);
     const values = [rollno, term, ...fields.map(f => (data as any)[f])];
     const query = AcademicInfoCrudQueries.UPDATE_BY_ROLLNO_AND_TERM(fields);
-    const result = await pool.query(query, values);
+    const result = await getPool().query(query, values);
     return result.rows[0] || null;
   }
 
   static async deleteAcademicInfoByRollNoAndTerm(rollno: string, term: number) {
-    const result = await pool.query(
+    const result = await getPool().query(
       `DELETE FROM AcademicInfo WHERE RollNo = $1 AND Term = $2 RETURNING *`,
       [rollno, term]
     );
@@ -232,12 +232,12 @@ export class DatabaseService {  // CourseProgram CRUD
 
    // ProgramInfo CRUD
   static async getAllProgramInfo() {
-    const result = await pool.query(ProgramInfoCrudQueries.GET_ALL);
+    const result = await getPool().query(ProgramInfoCrudQueries.GET_ALL);
     return result.rows;
   }
 
   static async getProgramInfoById(programId: number) {
-    const result = await pool.query(ProgramInfoCrudQueries.GET_BY_ID, [programId]);
+    const result = await getPool().query(ProgramInfoCrudQueries.GET_BY_ID, [programId]);
     return result.rows[0] || null;
   }
 
@@ -252,7 +252,7 @@ export class DatabaseService {  // CourseProgram CRUD
       data.SpecialCode ?? null,
       data.SpecialName ?? null
     ];
-    const result = await pool.query(ProgramInfoCrudQueries.CREATE, values);
+    const result = await getPool().query(ProgramInfoCrudQueries.CREATE, values);
     return result.rows[0];
   }
 
@@ -262,23 +262,23 @@ export class DatabaseService {  // CourseProgram CRUD
     const fields = Object.keys(data);
     const values = [programId, ...fields.map(f => (data as any)[f])];
     const query = ProgramInfoCrudQueries.UPDATE(fields);
-    const result = await pool.query(query, values);
+    const result = await getPool().query(query, values);
     return result.rows[0] || null;
   }
 
   static async deleteProgramInfo(programId: number) {
-    const result = await pool.query(ProgramInfoCrudQueries.DELETE, [programId]);
+    const result = await getPool().query(ProgramInfoCrudQueries.DELETE, [programId]);
     return (result.rowCount ?? 0) > 0;
   }
 
 
   static async getAllPersonalInfo() {
-    const result = await pool.query(PersonalInfoCrudQueries.GET_ALL);
+    const result = await getPool().query(PersonalInfoCrudQueries.GET_ALL);
     return result.rows;
   }
 
   static async getPersonalInfoByRollNo(rollno: string) {
-    const result = await pool.query(PersonalInfoCrudQueries.GET_BY_ROLL_NO, [rollno]);
+    const result = await getPool().query(PersonalInfoCrudQueries.GET_BY_ROLL_NO, [rollno]);
     return result.rows[0] || null;
   }
 
@@ -300,7 +300,7 @@ export class DatabaseService {  // CourseProgram CRUD
       data.AdmissionYear,
       data.LE
     ];
-    const result = await pool.query(PersonalInfoCrudQueries.CREATE, values);
+    const result = await getPool().query(PersonalInfoCrudQueries.CREATE, values);
     return result.rows[0];
   }
 
@@ -314,7 +314,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
     const values = [rollno, ...fields.map(f => updateData[f])];
     const query = PersonalInfoCrudQueries.UPDATE(fields);
-    const result = await pool.query(query, values);
+    const result = await getPool().query(query, values);
     const updatedPersonal = result.rows[0] || null;
 
     // --- Batch update logic for AcademicInfo ---
@@ -335,14 +335,14 @@ export class DatabaseService {  // CourseProgram CRUD
 
         if (le === undefined || admissionYear === undefined) {
             // Fetch from DB if not present in update
-            const personal = await pool.query(PersonalInfoCrudQueries.GET_BY_ROLL_NO, [rollno]);
+            const personal = await getPool().query(PersonalInfoCrudQueries.GET_BY_ROLL_NO, [rollno]);
             if (le === undefined) le = personal.rows[0]?.le;
             if (admissionYear === undefined) admissionYear = personal.rows[0]?.admissionyear;
         }
         // Only proceed if both are available and valid
         if (admissionYear !== undefined && admissionYear !== null) {
             let batch = (le ? admissionYear - 1 : admissionYear);
-            await pool.query(
+            await getPool().query(
                 `UPDATE AcademicInfo SET Batch = $1, UpdatedAt = (NOW() AT TIME ZONE 'Asia/Kolkata') WHERE RollNo = $2`,
                 [batch, rollno]
             );
@@ -353,22 +353,22 @@ export class DatabaseService {  // CourseProgram CRUD
 }
 
   static async deletePersonalInfo(rollno: string) {
-    const result = await pool.query(PersonalInfoCrudQueries.DELETE, [rollno]);
+    const result = await getPool().query(PersonalInfoCrudQueries.DELETE, [rollno]);
     return result.rows[0] || null;
   }
   // Campuses CRUD
   static async getAllCampuses() {
-    const result = await pool.query(CampusQueries.GET_ALL);
+    const result = await getPool().query(CampusQueries.GET_ALL);
     return result.rows;
   }
 
   static async getCampusById(id: number) {
-    const result = await pool.query(CampusQueries.GET_BY_ID, [id]);
+    const result = await getPool().query(CampusQueries.GET_BY_ID, [id]);
     return result.rows[0] || null;
   }
 
   static async createCampus(data: CampusData) {
-    const result = await pool.query(CampusQueries.CREATE, [data.CampusId,data.CampusCode, data.CampusName]);
+    const result = await getPool().query(CampusQueries.CREATE, [data.CampusId,data.CampusCode, data.CampusName]);
     return result.rows[0];
   }
 
@@ -389,12 +389,12 @@ export class DatabaseService {  // CourseProgram CRUD
     const setClause = fields.map((f, i) => `${f} = $${i + 1}`).join(', ');
     const query = `UPDATE CampusInfo SET ${setClause}, UpdatedAt = (NOW() AT TIME ZONE 'Asia/Kolkata') WHERE CampusId = $${fields.length + 1} RETURNING *`;
     values.push(id);
-    const result = await pool.query(query, values);
+    const result = await getPool().query(query, values);
     return result.rows[0] || null;
   }
 
   static async deleteCampus(id: number) {
-    const result = await pool.query(CampusQueries.DELETE, [id]);
+    const result = await getPool().query(CampusQueries.DELETE, [id]);
     return (result.rowCount ?? 0) > 0;
   }
   
@@ -402,7 +402,7 @@ export class DatabaseService {  // CourseProgram CRUD
   static async createAdminOTP(otpData: CreateAdminOTPData): Promise<AdminOTP> {
     try {
       const values = [otpData.adminid, otpData.otp, otpData.email, otpData.attempt || 3, otpData.createdat || new Date()];
-      const result = await pool.query(AdminOTPQueries.CREATE_ADMIN_OTP, values);
+      const result = await getPool().query(AdminOTPQueries.CREATE_ADMIN_OTP, values);
       return result.rows[0];
     } catch (error) {
       console.error("Error creating Admin OTP:", error);
@@ -412,7 +412,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async findLatestAdminOTP(adminid: string, email: string): Promise<AdminOTP | null> {
     try {
-      const result = await pool.query(AdminOTPQueries.FIND_LATEST_ADMIN_OTP, [adminid, email]);
+      const result = await getPool().query(AdminOTPQueries.FIND_LATEST_ADMIN_OTP, [adminid, email]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("Error finding latest Admin OTP:", error);
@@ -422,7 +422,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async updateAdminOTPAttempt(adminid: string, email: string, attempt: number, createdat: Date, otp: number | null): Promise<AdminOTP | null> {
     try {
-      const result = await pool.query(AdminOTPQueries.UPDATE_ADMIN_OTP_ATTEMPT, [adminid, email, attempt, createdat, otp]);
+      const result = await getPool().query(AdminOTPQueries.UPDATE_ADMIN_OTP_ATTEMPT, [adminid, email, attempt, createdat, otp]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("Error updating Admin OTP attempt:", error);
@@ -432,7 +432,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async expireAdminOTP(adminid: string, email: string): Promise<void> {
     try {
-      await pool.query(AdminOTPQueries.EXPIRE_ADMIN_OTP, [adminid, email]);
+      await getPool().query(AdminOTPQueries.EXPIRE_ADMIN_OTP, [adminid, email]);
     } catch (error) {
       console.error("Error expiring Admin OTP:", error);
       throw new Error("Failed to expire Admin OTP");
@@ -442,7 +442,7 @@ export class DatabaseService {  // CourseProgram CRUD
   // PersonalInfo operations
   static async findUserByRollNumber(rollno: string): Promise<PersonalInfo | null> {
     try {
-      const result = await pool.query(PersonalInfoQueries.FIND_BY_ROLLNO, [rollno]);
+      const result = await getPool().query(PersonalInfoQueries.FIND_BY_ROLLNO, [rollno]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("Error finding user by roll number:", error);
@@ -452,7 +452,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async findUserByEmail(email: string): Promise<PersonalInfo | null> {
     try {
-      const result = await pool.query(PersonalInfoQueries.FIND_BY_EMAIL, [email]);
+      const result = await getPool().query(PersonalInfoQueries.FIND_BY_EMAIL, [email]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("Error finding user by email:", error);
@@ -477,7 +477,7 @@ export class DatabaseService {  // CourseProgram CRUD
         userData.admissionyear,
         userData.le
       ];
-      const result = await pool.query(PersonalInfoQueries.CREATE_USER, values);
+      const result = await getPool().query(PersonalInfoQueries.CREATE_USER, values);
       return result.rows[0];
     } catch (error) {
       console.error("Error creating user:", error);
@@ -489,7 +489,7 @@ export class DatabaseService {  // CourseProgram CRUD
     try {
       // Handle password update with verification
       if (updateData.password !== undefined) {
-        const result = await pool.query(
+        const result = await getPool().query(
           PersonalInfoQueries.UPDATE_PASSWORD, 
           [updateData.password, updateData.isverified || true, rollno]
         );
@@ -498,7 +498,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
       // Handle phone update
       if (updateData.phone !== undefined) {
-        const result = await pool.query(
+        const result = await getPool().query(
           PersonalInfoQueries.UPDATE_PHONE, 
           [updateData.phone, rollno]
         );
@@ -507,7 +507,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
       // Handle verification status update
       if (updateData.isverified !== undefined) {
-        const result = await pool.query(
+        const result = await getPool().query(
           PersonalInfoQueries.UPDATE_VERIFICATION, 
           [updateData.isverified, rollno]
         );
@@ -523,7 +523,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async userExists(rollno: string): Promise<boolean> {
     try {
-      const result = await pool.query(PersonalInfoQueries.USER_EXISTS, [rollno]);
+      const result = await getPool().query(PersonalInfoQueries.USER_EXISTS, [rollno]);
       return result.rows[0]?.exists || false;
     } catch (error) {
       console.error("Error checking user existence:", error);
@@ -533,7 +533,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async getUserStats(): Promise<any> {
     try {
-      const result = await pool.query(PersonalInfoQueries.GET_USER_STATS);
+      const result = await getPool().query(PersonalInfoQueries.GET_USER_STATS);
       return result.rows[0];
     } catch (error) {
       console.error("Error getting user stats:", error);
@@ -544,7 +544,7 @@ export class DatabaseService {  // CourseProgram CRUD
     try {
       // No longer automatically delete existing OTP - preserve time records
       const values = [otpData.rollno, otpData.otp, otpData.email, otpData.attempt || 3, otpData.createdat || new Date()];
-      const result = await pool.query(OTPQueries.CREATE_OTP, values);
+      const result = await getPool().query(OTPQueries.CREATE_OTP, values);
       return result.rows[0];
     } catch (error) {
       console.error("Error creating OTP:", error);
@@ -579,7 +579,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async findLatestOTP(rollno: string, email: string): Promise<OTP | null> {
     try {
-      const result = await pool.query(OTPQueries.FIND_LATEST_OTP, [rollno, email]);
+      const result = await getPool().query(OTPQueries.FIND_LATEST_OTP, [rollno, email]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("Error finding latest OTP:", error);
@@ -589,7 +589,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async getOTPAttemptCount(rollno: string, email: string): Promise<number> {
     try {
-      const result = await pool.query(OTPQueries.GET_ATTEMPT_COUNT, [rollno, email]);
+      const result = await getPool().query(OTPQueries.GET_ATTEMPT_COUNT, [rollno, email]);
       return parseInt(result.rows[0]?.attempt_count || '0');
     } catch (error) {
       console.error("Error getting OTP attempt count:", error);
@@ -598,7 +598,7 @@ export class DatabaseService {  // CourseProgram CRUD
   }  static async deleteOTP(rollno: string, email: string): Promise<void> {
     try {
       const query = "DELETE FROM OTP WHERE rollno = $1 AND email = $2";
-      await pool.query(query, [rollno, email]);
+      await getPool().query(query, [rollno, email]);
     } catch (error) {
       console.error("Error deleting OTP:", error);
       throw new Error("Failed to delete OTP");
@@ -609,7 +609,7 @@ export class DatabaseService {  // CourseProgram CRUD
   static async expireOTP(rollno: string, email: string): Promise<void> {
     try {
       const query = "UPDATE OTP SET otp = NULL WHERE rollno = $1 AND email = $2";
-      await pool.query(query, [rollno, email]);
+      await getPool().query(query, [rollno, email]);
     } catch (error) {
       console.error("Error expiring OTP:", error);
       throw new Error("Failed to expire OTP");
@@ -618,7 +618,7 @@ export class DatabaseService {  // CourseProgram CRUD
   static async getOTPCount(rollno: string, email: string): Promise<number> {
     try {
       const query = "SELECT COUNT(*) as count FROM OTP WHERE rollno = $1 AND email = $2";
-      const result = await pool.query(query, [rollno, email]);
+      const result = await getPool().query(query, [rollno, email]);
       return parseInt(result.rows[0]?.count || '0');
     } catch (error) {
       console.error("Error getting OTP count:", error);
@@ -628,7 +628,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async cleanupDuplicateOTPs(rollno: string, email: string): Promise<void> {
     try {
-      await pool.query(OTPQueries.CLEANUP_DUPLICATE_OTPS, [rollno, email]);
+      await getPool().query(OTPQueries.CLEANUP_DUPLICATE_OTPS, [rollno, email]);
     } catch (error) {
       console.error("Error cleaning up duplicate OTPs:", error);
       throw new Error("Failed to cleanup duplicate OTPs");
@@ -636,7 +636,7 @@ export class DatabaseService {  // CourseProgram CRUD
   }
   static async updateOTPAttempt(rollno: string, email: string, attempt: number, createdat: Date, otp: number | null): Promise<OTP | null> {
     try {
-      const result = await pool.query(OTPQueries.UPDATE_OTP_ATTEMPT, [rollno, email, attempt, createdat, otp]);
+      const result = await getPool().query(OTPQueries.UPDATE_OTP_ATTEMPT, [rollno, email, attempt, createdat, otp]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("Error updating OTP attempt:", error);
@@ -646,7 +646,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async updateAttemptCount(rollno: string, email: string, attempt: number): Promise<OTP | null> {
     try {
-      const result = await pool.query(OTPQueries.UPDATE_ATTEMPT_COUNT, [rollno, email, attempt]);
+      const result = await getPool().query(OTPQueries.UPDATE_ATTEMPT_COUNT, [rollno, email, attempt]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("Error updating attempt count:", error);
@@ -656,7 +656,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async deleteExpiredOTPs(): Promise<void> {
     try {
-      await pool.query(OTPQueries.DELETE_EXPIRED_OTPS);
+      await getPool().query(OTPQueries.DELETE_EXPIRED_OTPS);
     } catch (error) {
       console.error("Error deleting expired OTPs:", error);
     }
@@ -664,7 +664,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async cleanupOldOTPs(): Promise<void> {
     try {
-      await pool.query(OTPQueries.CLEANUP_OLD_OTPS);
+      await getPool().query(OTPQueries.CLEANUP_OLD_OTPS);
     } catch (error) {
       console.error("Error cleaning up old OTPs:", error);
     }
@@ -673,7 +673,7 @@ export class DatabaseService {  // CourseProgram CRUD
   // Validation operations
   static async emailExists(email: string): Promise<boolean> {
     try {
-      const result = await pool.query(ValidationQueries.EMAIL_EXISTS, [email]);
+      const result = await getPool().query(ValidationQueries.EMAIL_EXISTS, [email]);
       return result.rows[0]?.exists || false;
     } catch (error) {
       console.error("Error checking email existence:", error);
@@ -683,7 +683,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async validateRollNoFormat(rollno: string): Promise<boolean> {
     try {
-      const result = await pool.query(ValidationQueries.VALIDATE_ROLLNO_FORMAT, [rollno]);
+      const result = await getPool().query(ValidationQueries.VALIDATE_ROLLNO_FORMAT, [rollno]);
       return result.rows[0]?.is_valid || false;
     } catch (error) {
       console.error("Error validating roll number format:", error);
@@ -694,7 +694,7 @@ export class DatabaseService {  // CourseProgram CRUD
   // Admin operations
   static async getDBHealth(): Promise<any> {
     try {
-      const result = await pool.query(AdminQueries.GET_DB_HEALTH);
+      const result = await getPool().query(AdminQueries.GET_DB_HEALTH);
       return result.rows[0];
     } catch (error) {
       console.error("Error getting DB health:", error);
@@ -704,7 +704,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async getUserActivity(limit: number = 50, offset: number = 0): Promise<any[]> {
     try {
-      const result = await pool.query(AdminQueries.GET_USER_ACTIVITY, [limit, offset]);
+      const result = await getPool().query(AdminQueries.GET_USER_ACTIVITY, [limit, offset]);
       return result.rows;
     } catch (error) {
       console.error("Error getting user activity:", error);
@@ -714,7 +714,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async getFailedAttempts(): Promise<any[]> {
     try {
-      const result = await pool.query(AdminQueries.GET_FAILED_ATTEMPTS);
+      const result = await getPool().query(AdminQueries.GET_FAILED_ATTEMPTS);
       return result.rows;
     } catch (error) {
       console.error("Error getting failed attempts:", error);
@@ -723,7 +723,7 @@ export class DatabaseService {  // CourseProgram CRUD
   }
   static async insertTempData() : Promise<void> {
     try {
-      await pool.query(TemporaryDataQueries.SAMPLE_DATA);
+      await getPool().query(TemporaryDataQueries.SAMPLE_DATA);
     } catch (error) {
       console.error("Error inserting temporary data:", error);
       throw new Error("Failed to insert temporary data");
@@ -731,7 +731,7 @@ export class DatabaseService {  // CourseProgram CRUD
   }
   static async deleteTempData(): Promise<void> {
     try {
-      await pool.query(TemporaryDataQueries.DELETE_DATA);
+      await getPool().query(TemporaryDataQueries.DELETE_DATA);
     } catch (error) {
       console.error("Error deleting temporary data:", error);
       throw new Error("Failed to delete temporary data");
@@ -739,7 +739,7 @@ export class DatabaseService {  // CourseProgram CRUD
   }
   static async insertTempPersonalData(): Promise<void> {
     try {
-      await pool.query(TemporaryDataQueries.SAMPLE_PERSONAL_DATA);
+      await getPool().query(TemporaryDataQueries.SAMPLE_PERSONAL_DATA);
     } catch (error) {
       console.error("Error inserting temporary personal data:", error);
       throw new Error("Failed to insert temporary personal data");
@@ -748,7 +748,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async getMaxCampusId(): Promise<number | null> {
     try {
-      const result = await pool.query(
+      const result = await getPool().query(
         `SELECT MAX(CampusId) as max_id FROM CampusInfo`
       );
       return result.rows[0].max_id;
@@ -760,7 +760,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async getMaxProgramId(): Promise<number | null> {
     try {
-      const result = await pool.query(
+      const result = await getPool().query(
         `SELECT MAX(ProgramId) as max_id FROM ProgramInfo`
       );
       return result.rows[0].max_id;
@@ -773,7 +773,7 @@ export class DatabaseService {  // CourseProgram CRUD
   // Marks Entry Validation Methods
   static async validateCourseCode(courseCode: string): Promise<boolean> {
     try {
-      const result = await pool.query(MarksValidationQueries.COURSE_CODE_EXISTS, [courseCode]);
+      const result = await getPool().query(MarksValidationQueries.COURSE_CODE_EXISTS, [courseCode]);
       return result.rows[0]?.exists || false;
     } catch (error) {
       console.error("Error validating course code:", error);
@@ -781,7 +781,7 @@ export class DatabaseService {  // CourseProgram CRUD
     }
   }  static async getCourseDetailsForValidation(courseCode: string): Promise<any> {
     try {
-      const result = await pool.query(MarksValidationQueries.GET_COURSE_BY_CODE, [courseCode]);
+      const result = await getPool().query(MarksValidationQueries.GET_COURSE_BY_CODE, [courseCode]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("Error getting course by code:", error);
@@ -791,7 +791,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async validateCourseName(courseCode: string, expectedCourseName: string): Promise<{ isValid: boolean; actualCourseName?: string }> {
     try {
-      const result = await pool.query(MarksValidationQueries.GET_COURSE_BY_CODE, [courseCode]);
+      const result = await getPool().query(MarksValidationQueries.GET_COURSE_BY_CODE, [courseCode]);
       if (result.rows.length === 0) {
         return { isValid: false };
       }
@@ -808,7 +808,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async validateRollNumber(rollNumber: string): Promise<boolean> {
     try {
-      const result = await pool.query(MarksValidationQueries.ROLLNO_EXISTS, [rollNumber]);
+      const result = await getPool().query(MarksValidationQueries.ROLLNO_EXISTS, [rollNumber]);
       return result.rows[0]?.exists || false;
     } catch (error) {
       console.error("Error validating roll number:", error);
@@ -818,7 +818,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async validateStudentName(rollNumber: string, expectedName: string): Promise<{ isValid: boolean; actualName?: string }> {
     try {
-      const result = await pool.query(MarksValidationQueries.GET_STUDENT_BY_ROLLNO, [rollNumber]);
+      const result = await getPool().query(MarksValidationQueries.GET_STUDENT_BY_ROLLNO, [rollNumber]);
       if (result.rows.length === 0) {
         return { isValid: false };
       }
@@ -835,7 +835,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async validateStudentEnrollment(rollNumber: string): Promise<boolean> {
     try {
-      const result = await pool.query(MarksValidationQueries.STUDENT_ENROLLED, [rollNumber]);
+      const result = await getPool().query(MarksValidationQueries.STUDENT_ENROLLED, [rollNumber]);
       return result.rows[0]?.enrolled || false;
     } catch (error) {
       console.error("Error validating student enrollment:", error);
@@ -845,7 +845,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async getStudentAcademicInfo(rollNumber: string): Promise<any> {
     try {
-      const result = await pool.query(MarksValidationQueries.GET_STUDENT_ACADEMIC_INFO, [rollNumber]);
+      const result = await getPool().query(MarksValidationQueries.GET_STUDENT_ACADEMIC_INFO, [rollNumber]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("Error getting student academic info:", error);
@@ -855,7 +855,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async validateCourseForProgram(courseCode: string, programId: number, batch: number): Promise<boolean> {
     try {
-      const result = await pool.query(MarksValidationQueries.COURSE_PROGRAM_MATCH, [courseCode, programId, batch]);
+      const result = await getPool().query(MarksValidationQueries.COURSE_PROGRAM_MATCH, [courseCode, programId, batch]);
       return result.rows[0]?.course_offered || false;
     } catch (error) {
       console.error("Error validating course program match:", error);
@@ -965,7 +965,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async getStudentByRollNumber(rollNumber: string): Promise<any> {
     try {
-      const result = await pool.query(MarksValidationQueries.GET_STUDENT_BY_ROLLNO, [rollNumber]);
+      const result = await getPool().query(MarksValidationQueries.GET_STUDENT_BY_ROLLNO, [rollNumber]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("Error getting student by roll number:", error);
@@ -975,7 +975,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async isStudentEnrolled(rollNumber: string): Promise<boolean> {
     try {
-      const result = await pool.query(MarksValidationQueries.STUDENT_ENROLLED, [rollNumber]);
+      const result = await getPool().query(MarksValidationQueries.STUDENT_ENROLLED, [rollNumber]);
       return result.rows[0]?.enrolled || false;
     } catch (error) {
       console.error("Error checking student enrollment:", error);
@@ -985,7 +985,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async validateCourseProgramMatch(courseCode: string, programId: number, batch: number): Promise<boolean> {
     try {
-      const result = await pool.query(MarksValidationQueries.COURSE_PROGRAM_MATCH, [courseCode, programId, batch]);
+      const result = await getPool().query(MarksValidationQueries.COURSE_PROGRAM_MATCH, [courseCode, programId, batch]);
       return result.rows[0]?.course_offered || false;
     } catch (error) {
       console.error("Error validating course program match:", error);
