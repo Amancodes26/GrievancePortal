@@ -31,7 +31,6 @@ interface AuditLogInput {
 const MAIN_CAMPUS_ID = 1016; // DDC - DSEU DWARKA CAMPUS
 
 export class SuperAdminService {
-  
   // Create a new admin with campus assignment
   static async createAdmin({ name, email, phone, password, role, campusId, isMainCampus }: CreateAdminInput): Promise<AdminInfo> {
     const client = await getPool().connect();
@@ -39,10 +38,21 @@ export class SuperAdminService {
     try {
       await client.query('BEGIN');
       
+      // Ensure main campus exists before proceeding
+      await this.ensureMainCampusExists();
+      
       // Check if email already exists
       const existing = await client.query('SELECT * FROM Admin WHERE Email = $1', [email]);
       if (existing.rows.length > 0) {
         throw new Error('Email already exists');
+      }
+      
+      // Validate campus exists if campusId is provided
+      if (campusId) {
+        const campusExists = await client.query('SELECT CampusId FROM CampusInfo WHERE CampusId = $1', [campusId]);
+        if (campusExists.rows.length === 0) {
+          throw new Error(`Campus with ID ${campusId} does not exist. Please create the campus first or use an existing campus ID.`);
+        }
       }
       
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -50,24 +60,26 @@ export class SuperAdminService {
       // Generate a unique AdminId
       const adminId = `${role.toUpperCase()}_${Date.now().toString().slice(-6)}`;
       
+      // Use default campus (1016) if no campusId provided
+      const finalCampusId = campusId || MAIN_CAMPUS_ID;
+      
       // Insert admin
       const insertResult = await client.query(
         `INSERT INTO Admin (AdminId, Name, Email, Password, Role, CampusId, IsActive)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING AdminId, Name, Email, Role, CampusId, IsActive, CreatedAt, UpdatedAt`,
-        [adminId, name, email, hashedPassword, role, campusId || null, true]
+        [adminId, name, email, hashedPassword, role, finalCampusId, true]
       );
       
       const admin = insertResult.rows[0];
       
-      // If campusId is provided, create campus assignment
-      if (campusId) {
-        await client.query(
-          `INSERT INTO Admin_Campus_Assignment (admin_id, campus_id, department, is_primary)
-           VALUES ($1, $2, $3, $4)`,
-          [adminId, campusId, role, isMainCampus || false]
-        );
-      }
+      // Create campus assignment
+      await client.query(
+        `INSERT INTO Admin_Campus_Assignment (admin_id, campus_id, department, is_primary)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (admin_id, campus_id, department) DO NOTHING`,
+        [adminId, finalCampusId, role, isMainCampus || false]
+      );
       
       await client.query('COMMIT');
       return admin;
@@ -286,6 +298,62 @@ export class SuperAdminService {
   // Get main campus ID
   static getMainCampusId(): number {
     return MAIN_CAMPUS_ID;
+  }
+
+  // Get all available campuses
+  static async getAllCampuses(): Promise<any[]> {
+    const result = await getPool().query(`
+      SELECT CampusId, CampusCode, CampusName, CreatedAt, UpdatedAt
+      FROM CampusInfo
+      ORDER BY CampusCode
+    `);
+    
+    return result.rows;
+  }
+
+  // Initialize default campuses if none exist
+  static async initializeDefaultCampuses(): Promise<void> {
+    const campusCount = await getPool().query('SELECT COUNT(*) FROM CampusInfo');
+    
+    if (parseInt(campusCount.rows[0].count) === 0) {
+      console.log('[SUPER_ADMIN] No campuses found, initializing default campuses...');
+      
+      const defaultCampuses = [
+        { id: 1016, code: 'DDC', name: 'DSEU Dwarka Campus' },
+        { id: 1001, code: 'DSC', name: 'DSEU Shakarpur Campus' },
+        { id: 1002, code: 'DKC', name: 'DSEU Kashmere Gate Campus' },
+        { id: 1003, code: 'DPC', name: 'DSEU Pusa Campus' },
+        { id: 1004, code: 'DVC', name: 'DSEU Vivek Vihar Campus' }
+      ];
+      
+      for (const campus of defaultCampuses) {
+        await getPool().query(
+          `INSERT INTO CampusInfo (CampusId, CampusCode, CampusName) 
+           VALUES ($1, $2, $3) 
+           ON CONFLICT (CampusId) DO NOTHING`,
+          [campus.id, campus.code, campus.name]
+        );
+      }
+      
+      console.log('[SUPER_ADMIN] Default campuses initialized successfully');
+    }
+  }
+
+  // Ensure main campus exists
+  static async ensureMainCampusExists(): Promise<void> {
+    const mainCampus = await getPool().query('SELECT CampusId FROM CampusInfo WHERE CampusId = $1', [MAIN_CAMPUS_ID]);
+    
+    if (mainCampus.rows.length === 0) {
+      console.log('[SUPER_ADMIN] Main campus not found, creating default main campus...');
+      
+      await getPool().query(
+        `INSERT INTO CampusInfo (CampusId, CampusCode, CampusName) 
+         VALUES ($1, $2, $3)`,
+        [MAIN_CAMPUS_ID, 'DDC', 'DSEU Dwarka Campus']
+      );
+      
+      console.log('[SUPER_ADMIN] Main campus created successfully');
+    }
   }
 }
 

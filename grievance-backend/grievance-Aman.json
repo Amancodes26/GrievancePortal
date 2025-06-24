@@ -1,0 +1,1414 @@
+{
+	"info": {
+		"_postman_id": "grievance-portal-api-collection",
+		"name": "Grievance Portal API Collection",
+		"description": "Complete API collection for the Grievance Portal Backend system covering user authentication, grievance management, attachments, and admin operations.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "api_version",
+			"value": "v1",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "test_roll_number",
+			"value": "2021001",
+			"type": "string"
+		},
+		{
+			"key": "test_email",
+			"value": "test@example.com",
+			"type": "string"
+		},
+		{
+			"key": "admin_email",
+			"value": "admin@example.com",
+			"type": "string"
+		},
+		{
+			"key": "issue_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "grievance_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "attachment_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "🏥 Health Check & System Status",
+			"item": [
+				{
+					"name": "Database Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/health",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health"]
+						},
+						"description": "Check database connection and pool status"
+					}
+				},
+				{
+					"name": "Pool Status Monitoring",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/pool-status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "pool-status"]
+						},
+						"description": "Monitor database connection pool status"
+					}
+				},
+				{
+					"name": "Environment Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/env-check",
+							"host": ["{{base_url}}"],
+							"path": ["api", "env-check"]
+						},
+						"description": "Check environment variables status"
+					}
+				},
+				{
+					"name": "Test Endpoint",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/test",
+							"host": ["{{base_url}}"],
+							"path": ["api", "test"]
+						},
+						"description": "Basic functionality test endpoint"
+					}
+				}
+			],
+			"description": "System health and monitoring endpoints"
+		},
+		{
+			"name": "👤 User Authentication",
+			"item": [
+				{
+					"name": "Check Roll Number Exists",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/users/auth/rollNumber-exist/{{test_roll_number}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "users", "auth", "rollNumber-exist", "{{test_roll_number}}"]
+						},
+						"description": "Check if a roll number exists in the system and get partial email"
+					}
+				},
+				{
+					"name": "Verify Partial Email & Send OTP",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/users/auth/verify-partial-email/{{test_roll_number}}/{{test_email}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "users", "auth", "verify-partial-email", "{{test_roll_number}}", "{{test_email}}"]
+						},
+						"description": "Verify partial email matches and send OTP to user"
+					}
+				},
+				{
+					"name": "Verify OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rollNumber\": \"{{test_roll_number}}\",\n  \"otp\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/users/auth/verify-otp",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "users", "auth", "verify-otp"]
+						},
+						"description": "Verify the OTP sent to user's email"
+					}
+				},
+				{
+					"name": "Set Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rollNumber\": \"{{test_roll_number}}\",\n  \"password\": \"SecurePassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/users/auth/set-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "users", "auth", "set-password"]
+						},
+						"description": "Set password for user account"
+					}
+				},
+				{
+					"name": "User Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set('jwt_token', response.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rollNumber\": \"{{test_roll_number}}\",\n  \"password\": \"SecurePassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/users/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "users", "auth", "login"]
+						},
+						"description": "Login with roll number and password, returns JWT token"
+					}
+				},
+				{
+					"name": "Resend OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rollNumber\": \"{{test_roll_number}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/users/auth/resend-otp",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "users", "auth", "resend-otp"]
+						},
+						"description": "Resend OTP to user's email"
+					}
+				}
+			],
+			"description": "User authentication and registration endpoints"
+		},
+		{
+			"name": "🛠️ Admin Authentication",
+			"item": [
+				{
+					"name": "Simple Admin Login (Testing)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set('admin_jwt_token', response.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/admin/auth/simple-login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "admin", "auth", "simple-login"]
+						},
+						"description": "Simple admin login bypassing OTP (for testing)"
+					}
+				},
+				{
+					"name": "Admin Login (with OTP)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/admin/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "admin", "auth", "login"]
+						},
+						"description": "Admin login that sends OTP to email"
+					}
+				},
+				{
+					"name": "Verify Admin OTP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set('admin_jwt_token', response.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"otp\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/admin/auth/verify-otp",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "admin", "auth", "verify-otp"]
+						},
+						"description": "Verify admin OTP and get JWT token"
+					}
+				},
+				{
+					"name": "Resend Admin OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{admin_email}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/admin/auth/resend-otp",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "admin", "auth", "resend-otp"]
+						},
+						"description": "Resend OTP to admin's email"
+					}
+				},
+				{
+					"name": "Set Admin Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"newPassword\": \"NewSecurePassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/admin/auth/set-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "admin", "auth", "set-password"]
+						},
+						"description": "Set or change admin password"
+					}
+				},
+				{
+					"name": "Get Admin Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/admin/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "admin", "profile"]
+						},
+						"description": "Get authenticated admin profile information"
+					}
+				},
+				{
+					"name": "Get Admin Dashboard",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/admin/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "admin", "dashboard"]
+						},
+						"description": "Get admin dashboard data and statistics"
+					}
+				},
+				{
+					"name": "Database Migration Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/admin/migrate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "admin", "migrate"]
+						},
+						"description": "Check database migration status (testing endpoint)"
+					}
+				}
+			],
+			"description": "Admin authentication and profile management"
+		},
+		{
+			"name": "📝 Grievance Management",
+			"item": [
+				{
+					"name": "Create Grievance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.issue_id) {",
+									"        pm.collectionVariables.set('issue_id', response.data.issue_id);",
+									"    }",
+									"    if (response.data && response.data.id) {",
+									"        pm.collectionVariables.set('grievance_id', response.data.id.toString());",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"campus\": \"Main Campus\",\n  \"subject\": \"Library Access Issue\",\n  \"description\": \"Unable to access digital library resources. Getting authentication error when trying to log in to the library portal.\",\n  \"issue_type\": \"ACADEMIC\",\n  \"attachment\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/grievances",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "grievances"]
+						},
+						"description": "Create a new grievance (requires user authentication)"
+					}
+				},
+				{
+					"name": "Get My Grievances",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/grievances/my-grievances",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "grievances", "my-grievances"]
+						},
+						"description": "Get all grievances for the authenticated user"
+					}
+				},
+				{
+					"name": "Get All Grievances (Auth Required)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/grievances",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "grievances"]
+						},
+						"description": "Get all grievances (filtered by role, requires authentication)"
+					}
+				},
+				{
+					"name": "Search Grievance by Issue ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/grievances/search/{{issue_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "grievances", "search", "{{issue_id}}"]
+						},
+						"description": "Search for a grievance by issue ID (public endpoint)"
+					}
+				},
+				{
+					"name": "Get Grievance by Issue ID (Alternative)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/grievances/issue/{{issue_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "grievances", "issue", "{{issue_id}}"]
+						},
+						"description": "Get grievance by issue ID (alternative endpoint)"
+					}
+				},
+				{
+					"name": "Get Grievance by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/grievances/{{grievance_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "grievances", "{{grievance_id}}"]
+						},
+						"description": "Get grievance details by grievance ID with responses and history"
+					}
+				},
+				{
+					"name": "Get Grievances by Roll Number",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/grievances/by-rollno/{{test_roll_number}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "grievances", "by-rollno", "{{test_roll_number}}"]
+						},
+						"description": "Get all grievances for a specific roll number (requires authentication for privacy)"
+					}
+				},
+				{
+					"name": "Update Grievance Status",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"note\": \"Grievance is being reviewed by the academic department\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/grievances/{{grievance_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "grievances", "{{grievance_id}}"]
+						},
+						"description": "Update grievance status (requires authentication)"
+					}
+				}
+			],
+			"description": "Grievance creation, retrieval, and management endpoints"
+		},
+		{
+			"name": "📎 Attachment Management",
+			"item": [
+				{
+					"name": "Attachment System Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/attachments/health",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "attachments", "health"]
+						},
+						"description": "Check attachment system health and configuration"
+					}
+				},
+				{
+					"name": "Upload Attachment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.attachment_id) {",
+									"        pm.collectionVariables.set('attachment_id', response.data.attachment_id.toString());",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "attachment",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "issue_id",
+									"value": "{{issue_id}}",
+									"type": "text"
+								},
+								{
+									"key": "test_user_rollno",
+									"value": "{{test_roll_number}}",
+									"type": "text",
+									"description": "Optional for testing"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/attachments/upload",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "attachments", "upload"]
+						},
+						"description": "Upload PDF attachment for a grievance (requires authentication, max 2MB PDF files only)"
+					}
+				},
+				{
+					"name": "Download Attachment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/attachments/{{attachment_id}}/download",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "attachments", "{{attachment_id}}", "download"]
+						},
+						"description": "Download attachment file (requires authentication for security)"
+					}
+				},
+				{
+					"name": "Delete Attachment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"test_user_rollno\": \"{{test_roll_number}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/attachments/{{attachment_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "attachments", "{{attachment_id}}"]
+						},
+						"description": "Delete attachment (user can only delete their own, requires authentication)"
+					}
+				}
+			],
+			"description": "File attachment upload, download, and management"
+		},
+		{
+			"name": "🏛️ Department Admin",
+			"item": [
+				{
+					"name": "Get Department Grievances",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/dept-admin/grievances?department=academic&status=PENDING&limit=10&offset=0",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "dept-admin", "grievances"],
+							"query": [
+								{
+									"key": "department",
+									"value": "academic"
+								},
+								{
+									"key": "status",
+									"value": "PENDING"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						},
+						"description": "Get grievances assigned to department admin (requires admin authentication)"
+					}
+				},
+				{
+					"name": "Add Response to Grievance",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"response_text\": \"We have reviewed your library access issue and are working on resolving it. The IT team has been notified and you should have access restored within 24 hours.\",\n  \"status\": \"IN_PROGRESS\",\n  \"priority\": \"HIGH\",\n  \"attachment\": false,\n  \"stage\": \"REVIEW\",\n  \"test_user_rollno\": \"{{test_roll_number}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/dept-admin/grievances/{{grievance_id}}/response",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "dept-admin", "grievances", "{{grievance_id}}", "response"]
+						},
+						"description": "Add response to a grievance (requires department admin authentication)"
+					}
+				},
+				{
+					"name": "Reject Grievance",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rejection_reason\": \"Insufficient information provided. Please provide more details about the library access issue including specific error messages.\",\n  \"priority\": \"LOW\",\n  \"note\": \"Rejected due to lack of detail - student needs to resubmit with more information\",\n  \"test_user_rollno\": \"{{test_roll_number}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/dept-admin/grievances/{{grievance_id}}/reject",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "dept-admin", "grievances", "{{grievance_id}}", "reject"]
+						},
+						"description": "Reject a grievance with reason (requires department admin authentication)"
+					}
+				},
+				{
+					"name": "Redirect Grievance",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"target_department\": \"campus\",\n  \"redirect_reason\": \"This issue requires campus IT support rather than academic department intervention. Redirecting to campus administration.\",\n  \"priority\": \"MEDIUM\",\n  \"note\": \"Redirected to campus IT for technical resolution\",\n  \"target_campus_id\": 1,\n  \"test_user_rollno\": \"{{test_roll_number}}\",\n  \"department\": \"academic\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/dept-admin/grievances/{{grievance_id}}/redirect",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "dept-admin", "grievances", "{{grievance_id}}", "redirect"]
+						},
+						"description": "Redirect grievance to another department (requires department admin authentication)"
+					}
+				},
+				{
+					"name": "Update Grievance Status",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"RESOLVED\",\n  \"priority\": \"LOW\",\n  \"note\": \"Issue has been resolved. Library access has been restored and tested.\",\n  \"test_user_rollno\": \"{{test_roll_number}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/dept-admin/grievances/{{grievance_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "dept-admin", "grievances", "{{grievance_id}}", "status"]
+						},
+						"description": "Update grievance status (requires department admin authentication)"
+					}
+				},
+				{
+					"name": "Get Department Statistics",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/dept-admin/stats?department=academic&timeframe=month",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "dept-admin", "stats"],
+							"query": [
+								{
+									"key": "department",
+									"value": "academic"
+								},
+								{
+									"key": "timeframe",
+									"value": "month"
+								}
+							]
+						},
+						"description": "Get department statistics and analytics (requires department admin authentication)"
+					}
+				},
+				{
+					"name": "Get Admin Campuses",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/dept-admin/campuses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "dept-admin", "campuses"]
+						},
+						"description": "Get campuses assigned to the authenticated admin"
+					}
+				},
+				{
+					"name": "Get Main Campus Department Admins",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/dept-admin/main-campus/academic/admins",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "dept-admin", "main-campus", "academic", "admins"]
+						},
+						"description": "Get all admins for a specific department in main campus"
+					}
+				}
+			],
+			"description": "Department admin operations for grievance management"
+		},
+		{
+			"name": "👑 Super Admin",
+			"item": [
+				{
+					"name": "Test Super Admin Routes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/test",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "test"]
+						},
+						"description": "Test endpoint to verify super admin routes are working"
+					}
+				},
+				{
+					"name": "Create Admin",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@university.edu\",\n  \"phone\": \"+1-555-0123\",\n  \"password\": \"SecureAdminPass123!\",\n  \"role\": \"academic\",\n  \"campusId\": 1,\n  \"isMainCampus\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/admins",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "admins"]
+						},
+						"description": "Create a new admin (requires super admin authentication)"
+					}
+				},
+				{
+					"name": "Get All Admins",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/admins",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "admins"]
+						},
+						"description": "Get all admins with campus information (requires super admin authentication)"
+					}
+				},
+				{
+					"name": "Get Admins by Campus",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/admins/campus/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "admins", "campus", "1"]
+						},
+						"description": "Get all admins for a specific campus (requires super admin authentication)"
+					}
+				},
+				{
+					"name": "Assign Admin to Campus",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"adminId\": \"admin123\",\n  \"campusId\": 2,\n  \"role\": \"campus\",\n  \"isMainCampus\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/admins/assign-campus",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "admins", "assign-campus"]
+						},
+						"description": "Assign admin to a specific campus (requires super admin authentication)"
+					}
+				},
+				{
+					"name": "Update Admin",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe Updated\",\n  \"email\": \"john.doe.updated@university.edu\",\n  \"phone\": \"+1-555-0124\",\n  \"role\": \"exam\",\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/admins/admin123",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "admins", "admin123"]
+						},
+						"description": "Update admin information (requires super admin authentication)"
+					}
+				},
+				{
+					"name": "Deactivate Admin",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/admins/admin123",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "admins", "admin123"]
+						},
+						"description": "Deactivate admin account (requires super admin authentication)"
+					}
+				},
+				{
+					"name": "Get Campus Admin Statistics",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/stats/campus-admin",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "stats", "campus-admin"]
+						},
+						"description": "Get campus admin statistics (requires super admin authentication)"
+					}
+				},
+				{
+					"name": "Get System Statistics",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/stats/system",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "stats", "system"]
+						},
+						"description": "Get overall system statistics (requires super admin authentication)"
+					}
+				},
+				{
+					"name": "Get Admin Audit Logs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/audit-logs?limit=50&offset=0&action_type=ADMIN_CREATED",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "audit-logs"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								},
+								{
+									"key": "action_type",
+									"value": "ADMIN_CREATED"
+								}
+							]
+						},
+						"description": "Get admin audit logs and activity history (requires super admin authentication)"
+					}
+				},
+				{
+					"name": "Get All Campus Issues",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/campus-issues",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "campus-issues"]
+						},
+						"description": "Get all campus-related issues (requires super admin authentication)"
+					}
+				},
+				{
+					"name": "Get All Department Issues",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/department-issues",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "department-issues"]
+						},
+						"description": "Get all department-related issues (requires super admin authentication)"
+					}
+				},
+				{
+					"name": "Get All Issues",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/super-admin/all-issues",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{api_version}}", "super-admin", "all-issues"]
+						},
+						"description": "Get all issues across the entire system (requires super admin authentication)"
+					}
+				}
+			],
+			"description": "Super admin operations for system management"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

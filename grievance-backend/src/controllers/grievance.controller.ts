@@ -1,6 +1,8 @@
 /// <reference path="../types/express/index.d.ts" />
 import { Request, Response, NextFunction } from 'express';
 import * as grievanceService from '../services/grievance.service';
+import { linkAttachmentToGrievance } from './grievanceCreateAttachment.controller';
+import { validateTemporaryAttachments, linkMultipleAttachmentsToGrievance } from '../services/preGrievanceAttachment.service';
 import { Grievance } from '../models/Grievance';
 import { PersonalInfo } from '../models/PersonalInfo';
 
@@ -15,6 +17,8 @@ export const createGrievance = async (req: Request, res: Response): Promise<void
       });
       return;
     }    const grievanceData: Grievance = req.body;
+    const { attachment_ids } = req.body; // Array of attachment IDs from pre-uploaded files
+    
     const serviceData = {
       issue_id: '', // Will be set below
       rollno: req.user.rollNumber,
@@ -23,28 +27,89 @@ export const createGrievance = async (req: Request, res: Response): Promise<void
       description: grievanceData.description,
       issue_type: grievanceData.issue_type,
       status: 'PENDING',
-      attachment: grievanceData.attachment !== undefined ? (grievanceData.attachment ? 'true' : 'false') : null
+      attachment: (attachment_ids && attachment_ids.length > 0) ? 'true' : 'false'
     };
     
-    // Ensure required fields are present
-    if (!serviceData.subject || !serviceData.description || grievanceData.attachment === undefined || grievanceData.attachment === null || !req.user.rollNumber || !serviceData.issue_type) {
+    // Ensure required fields are present (attachment is now optional)
+    if (!serviceData.subject || !serviceData.description || !req.user.rollNumber || !serviceData.issue_type) {
       res.status(400).json({
-        message: 'Subject, description, attachment, roll number, and issue type are required',
+        message: 'Subject, description, roll number, and issue type are required',
         success: false,
       });
       return;
     }
+      // Validate attachment_ids if provided
+    if (attachment_ids && !Array.isArray(attachment_ids)) {
+      res.status(400).json({
+        message: 'attachment_ids must be an array of attachment IDs',
+        success: false,
+      });
+      return;
+    }
+
+    // Validate temporary attachments if provided
+    if (attachment_ids && attachment_ids.length > 0) {
+      console.log('[GRIEVANCE_CREATE] Validating pre-uploaded attachments:', attachment_ids);
+      
+      const validationResult = await validateTemporaryAttachments(attachment_ids, req.user.rollNumber);
+      
+      if (!validationResult.valid) {
+        res.status(400).json({
+          message: `Invalid attachment IDs: ${validationResult.invalidIds.join(', ')}. These attachments either don't exist, don't belong to you, or are already linked to another grievance.`,
+          success: false,
+          invalidAttachmentIds: validationResult.invalidIds
+        });
+        return;
+      }
+    }
+
     // Generate unique issue ID
     const issueId = `ISSUE-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
     serviceData.issue_id = issueId;
 
-       
+    // Create the grievance
     const newGrievance = await grievanceService.createGrievance(serviceData);
-    res.status(201).json({
+    
+    // Link pre-uploaded attachments to the newly created grievance
+    let attachmentLinkResult;
+    if (attachment_ids && attachment_ids.length > 0) {
+      console.log('[GRIEVANCE_CREATE] Linking attachments to grievance:', {
+        grievanceId: newGrievance.id,
+        attachmentIds: attachment_ids
+      });
+      
+      attachmentLinkResult = await linkMultipleAttachmentsToGrievance(
+        attachment_ids,
+        newGrievance.id,
+        req.user.rollNumber
+      );
+      
+      if (!attachmentLinkResult.success) {
+        console.warn('[GRIEVANCE_CREATE] Some attachments failed to link:', attachmentLinkResult.errors);
+      }
+    }
+
+    // Prepare response
+    const responseData: any = {
       message: 'Grievance created successfully',
       data: newGrievance,
       success: true,
-    });
+    };
+
+    // Include attachment linking results if attachments were processed
+    if (attachmentLinkResult) {
+      responseData.attachments = {
+        linked: attachmentLinkResult.linkedCount,
+        failed: attachmentLinkResult.failedCount,
+        errors: attachmentLinkResult.errors
+      };
+      
+      if (attachmentLinkResult.failedCount > 0) {
+        responseData.message = `Grievance created successfully, but ${attachmentLinkResult.failedCount} out of ${attachment_ids.length} attachments failed to link. Check attachment errors for details.`;
+      }
+    }
+
+    res.status(201).json(responseData);
 
   } catch (error) {
     res.status(500).json({
