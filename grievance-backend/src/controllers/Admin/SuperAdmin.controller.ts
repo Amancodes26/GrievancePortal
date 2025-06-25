@@ -411,6 +411,34 @@ export const getAllIssues = async (req: Request, res: Response): Promise<void> =
   }
 };
 
+// --- 13. View all new grievances (SuperAdmin only) ---
+export const getAllNewGrievances = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.admin || req.admin.Role !== 'superadmin') {
+      res.status(403).json({ 
+        success: false, 
+        message: 'Only SuperAdmin can view all new grievances.' 
+      });
+      return;
+    }
+
+    const all = await grievanceService.getAllGrievancesWithCompleteDetails();
+    const newGrievances = all.filter((g: any) => g.status === 'PENDING');
+    
+    res.status(200).json({ 
+      success: true, 
+      data: newGrievances,
+      total: newGrievances.length,
+      message: 'All new grievances retrieved successfully'
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
 // --- Export for router ---
 export default {
   createAdmin,
@@ -424,5 +452,6 @@ export default {
   deactivateAdmin,
   getAllCampusIssues,
   getAllDepartmentIssues,
-  getAllIssues
+  getAllIssues,
+  getAllNewGrievances
 };

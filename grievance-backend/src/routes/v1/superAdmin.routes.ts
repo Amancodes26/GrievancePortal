@@ -11,7 +11,8 @@ import {
   deactivateAdmin,
   getAllCampusIssues,
   getAllDepartmentIssues,
-  getAllIssues
+  getAllIssues,
+  getAllNewGrievances
 } from '../../controllers/Admin/SuperAdmin.controller';
 import { verifyAdminJWT } from '../../middlewares/adminAuth.middleware';
 import { permit } from '../../middlewares/role.middleware';
@@ -135,6 +136,14 @@ router.get('/all-issues',
   superAdminRateLimit,
   auditSystemAccess,
   asyncHandler(getAllIssues)
+);
+
+router.get('/new-grievances', 
+  verifyAdminJWT, 
+  permit('superadmin'), 
+  superAdminRateLimit,
+  auditSystemAccess,
+  asyncHandler(getAllNewGrievances)
 );
 
 export default router;

@@ -40,12 +40,11 @@ if (missingEnvVars.length === 0) {
     port: Number(process.env.PGPORT) || 26066,
     ssl: {
       rejectUnauthorized: false,
-    },
-    // Optimized for Vercel serverless functions
+    },    // Optimized for Vercel serverless functions
     max: process.env.NODE_ENV === 'production' ? 5 : 15, // Smaller pool for production
     min: 0,  // No minimum connections for serverless
-    idleTimeoutMillis: 10000, // Release idle connections quickly
-    connectionTimeoutMillis: 5000, // Faster timeout for serverless
+    idleTimeoutMillis: process.env.NODE_ENV === 'production' ? 10000 : 30000, // Release idle connections quickly
+    connectionTimeoutMillis: process.env.NODE_ENV === 'production' ? 5000 : 30000, // Longer timeout for development
     allowExitOnIdle: true, // Allow connections to be released when idle
     // Additional serverless optimizations
     statement_timeout: 30000, // 30 second query timeout
@@ -144,13 +143,29 @@ if (pool) {
         tableStatus.forEach(row => {
           console.log(`   ${row.table_name}: ${row.record_count} records`);
         });
-      }
-    })
+      }    })
     .catch((err) => {
-      console.error("❌ Failed to connect to PostgreSQL database:", err);
-      // Don't exit in serverless environment
-      if (process.env.NODE_ENV !== 'production') {
-        console.error("Exiting due to database connection failure");
+      console.error("❌ Failed to connect to PostgreSQL database:", err.message);
+      console.error("❌ Error code:", err.code);
+      
+      // Provide helpful error messages based on error type
+      if (err.code === 'ENOTFOUND') {
+        console.error("💡 Check your internet connection and database hostname");
+      } else if (err.code === 'ECONNREFUSED') {
+        console.error("💡 Database server might be down or port blocked");
+      } else if (err.code === 'ETIMEDOUT') {
+        console.error("💡 Connection timeout - check network or firewall settings");
+      } else if (err.message.includes('password')) {
+        console.error("💡 Check your database credentials");
+      }
+      
+      console.warn("⚠️  Server will start without database connection.");
+      console.warn("⚠️  Database-dependent features will not work until connection is restored.");
+      
+      // Don't exit in development - let the server run for debugging
+      if (process.env.NODE_ENV === 'production') {
+        console.error("🛑 Exiting due to database connection failure in production");
+        process.exit(1);
       }
     });
 } else {
