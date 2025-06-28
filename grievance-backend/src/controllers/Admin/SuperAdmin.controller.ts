@@ -423,13 +423,97 @@ export const getAllNewGrievances = async (req: Request, res: Response): Promise<
     }
 
     const all = await grievanceService.getAllGrievancesWithCompleteDetails();
-    const newGrievances = all.filter((g: any) => g.status === 'PENDING');
+    const newGrievances = all.filter((g: any) => g.status === 'NEW');
     
     res.status(200).json({ 
       success: true, 
       data: newGrievances,
       total: newGrievances.length,
       message: 'All new grievances retrieved successfully'
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+// --- 14. View all pending grievances (SuperAdmin only) ---
+export const getAllPendingGrievances = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.admin || req.admin.Role !== 'superadmin') {
+      res.status(403).json({ 
+        success: false, 
+        message: 'Only SuperAdmin can view all pending grievances.' 
+      });
+      return;
+    }
+
+    const all = await grievanceService.getAllGrievancesWithCompleteDetails();
+    const pendingGrievances = all.filter((g: any) => g.status === 'PENDING');
+    
+    res.status(200).json({ 
+      success: true, 
+      data: pendingGrievances,
+      total: pendingGrievances.length,
+      message: 'All pending grievances retrieved successfully'
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+// --- 15. View all resolved grievances (SuperAdmin only) ---
+export const getAllResolvedGrievances = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.admin || req.admin.Role !== 'superadmin') {
+      res.status(403).json({ 
+        success: false, 
+        message: 'Only SuperAdmin can view all resolved grievances.' 
+      });
+      return;
+    }
+
+    const all = await grievanceService.getAllGrievancesWithCompleteDetails();
+    const resolvedGrievances = all.filter((g: any) => g.status === 'RESOLVED');
+    
+    res.status(200).json({ 
+      success: true, 
+      data: resolvedGrievances,
+      total: resolvedGrievances.length,
+      message: 'All resolved grievances retrieved successfully'
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+// --- 16. View all rejected grievances (SuperAdmin only) ---
+export const getAllRejectedGrievances = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.admin || req.admin.Role !== 'superadmin') {
+      res.status(403).json({ 
+        success: false, 
+        message: 'Only SuperAdmin can view all rejected grievances.' 
+      });
+      return;
+    }
+
+    const all = await grievanceService.getAllGrievancesWithCompleteDetails();
+    const rejectedGrievances = all.filter((g: any) => g.status === 'REJECTED');
+    
+    res.status(200).json({ 
+      success: true, 
+      data: rejectedGrievances,
+      total: rejectedGrievances.length,
+      message: 'All rejected grievances retrieved successfully'
     });
   } catch (error: any) {
     res.status(500).json({ 
@@ -453,5 +537,8 @@ export default {
   getAllCampusIssues,
   getAllDepartmentIssues,
   getAllIssues,
-  getAllNewGrievances
+  getAllNewGrievances,
+  getAllPendingGrievances,
+  getAllResolvedGrievances,
+  getAllRejectedGrievances
 };

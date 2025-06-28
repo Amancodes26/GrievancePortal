@@ -12,7 +12,10 @@ import {
   getAllCampusIssues,
   getAllDepartmentIssues,
   getAllIssues,
-  getAllNewGrievances
+  getAllNewGrievances,
+  getAllPendingGrievances,
+  getAllResolvedGrievances,
+  getAllRejectedGrievances
 } from '../../controllers/Admin/SuperAdmin.controller';
 import { verifyAdminJWT } from '../../middlewares/adminAuth.middleware';
 import { permit } from '../../middlewares/role.middleware';
@@ -144,6 +147,30 @@ router.get('/new-grievances',
   superAdminRateLimit,
   auditSystemAccess,
   asyncHandler(getAllNewGrievances)
+);
+
+router.get('/pending-grievances', 
+  verifyAdminJWT, 
+  permit('superadmin'), 
+  superAdminRateLimit,
+  auditSystemAccess,
+  asyncHandler(getAllPendingGrievances)
+);
+
+router.get('/resolved-grievances', 
+  verifyAdminJWT, 
+  permit('superadmin'), 
+  superAdminRateLimit,
+  auditSystemAccess,
+  asyncHandler(getAllResolvedGrievances)
+);
+
+router.get('/rejected-grievances', 
+  verifyAdminJWT, 
+  permit('superadmin'), 
+  superAdminRateLimit,
+  auditSystemAccess,
+  asyncHandler(getAllRejectedGrievances)
 );
 
 export default router;
