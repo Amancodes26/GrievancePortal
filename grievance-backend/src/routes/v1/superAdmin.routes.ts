@@ -135,7 +135,7 @@ router.get('/department-issues',
 
 router.get('/all-issues', 
   verifyAdminJWT, 
-  permit('superadmin'), 
+  permit('superadmin', 'campus admin', 'campus academic', 'campus examination', 'university academic', 'campus non-academic', 'university examination', 'university non-academic', 'academic', 'exam', 'campus'), 
   superAdminRateLimit,
   auditSystemAccess,
   asyncHandler(getAllIssues)
@@ -143,7 +143,7 @@ router.get('/all-issues',
 
 router.get('/new-grievances', 
   verifyAdminJWT, 
-  permit('superadmin'), 
+  permit('superadmin', 'campus admin', 'campus academic', 'campus examination', 'university academic', 'campus non-academic', 'university examination', 'university non-academic', 'academic', 'exam', 'campus'), 
   superAdminRateLimit,
   auditSystemAccess,
   asyncHandler(getAllNewGrievances)
@@ -151,7 +151,7 @@ router.get('/new-grievances',
 
 router.get('/pending-grievances', 
   verifyAdminJWT, 
-  permit('superadmin'), 
+  permit('superadmin', 'campus admin', 'campus academic', 'campus examination', 'university academic', 'campus non-academic', 'university examination', 'university non-academic', 'academic', 'exam', 'campus'), 
   superAdminRateLimit,
   auditSystemAccess,
   asyncHandler(getAllPendingGrievances)
@@ -159,7 +159,7 @@ router.get('/pending-grievances',
 
 router.get('/resolved-grievances', 
   verifyAdminJWT, 
-  permit('superadmin'), 
+  permit('superadmin', 'campus admin', 'campus academic', 'campus examination', 'university academic', 'campus non-academic', 'university examination', 'university non-academic', 'academic', 'exam', 'campus'), 
   superAdminRateLimit,
   auditSystemAccess,
   asyncHandler(getAllResolvedGrievances)
@@ -167,7 +167,7 @@ router.get('/resolved-grievances',
 
 router.get('/rejected-grievances', 
   verifyAdminJWT, 
-  permit('superadmin'), 
+  permit('superadmin', 'campus admin', 'campus academic', 'campus examination', 'university academic', 'campus non-academic', 'university examination', 'university non-academic', 'academic', 'exam', 'campus'), 
   superAdminRateLimit,
   auditSystemAccess,
   asyncHandler(getAllRejectedGrievances)
