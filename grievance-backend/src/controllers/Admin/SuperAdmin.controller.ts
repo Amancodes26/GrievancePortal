@@ -384,13 +384,13 @@ export const getAllDepartmentIssues = async (req: Request, res: Response): Promi
   }
 };
 
-// --- 12. View all issues (SuperAdmin only) ---
+// --- 12. View all issues (Any admin role) ---
 export const getAllIssues = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin) {
       res.status(403).json({ 
         success: false, 
-        message: 'Only SuperAdmin can view all issues.' 
+        message: 'Admin authentication required to view all issues.' 
       });
       return;
     }
@@ -411,13 +411,13 @@ export const getAllIssues = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-// --- 13. View all new grievances (SuperAdmin only) ---
+// --- 13. View all new grievances (Any admin role) ---
 export const getAllNewGrievances = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin) {
       res.status(403).json({ 
         success: false, 
-        message: 'Only SuperAdmin can view all new grievances.' 
+        message: 'Admin authentication required to view all new grievances.' 
       });
       return;
     }
@@ -439,13 +439,13 @@ export const getAllNewGrievances = async (req: Request, res: Response): Promise<
   }
 };
 
-// --- 14. View all pending grievances (SuperAdmin only) ---
+// --- 14. View all pending grievances (Any admin role) ---
 export const getAllPendingGrievances = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin) {
       res.status(403).json({ 
         success: false, 
-        message: 'Only SuperAdmin can view all pending grievances.' 
+        message: 'Admin authentication required to view all pending grievances.' 
       });
       return;
     }
@@ -467,13 +467,13 @@ export const getAllPendingGrievances = async (req: Request, res: Response): Prom
   }
 };
 
-// --- 15. View all resolved grievances (SuperAdmin only) ---
+// --- 15. View all resolved grievances (Any admin role) ---
 export const getAllResolvedGrievances = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin) {
       res.status(403).json({ 
         success: false, 
-        message: 'Only SuperAdmin can view all resolved grievances.' 
+        message: 'Admin authentication required to view all resolved grievances.' 
       });
       return;
     }
@@ -495,13 +495,13 @@ export const getAllResolvedGrievances = async (req: Request, res: Response): Pro
   }
 };
 
-// --- 16. View all rejected grievances (SuperAdmin only) ---
+// --- 16. View all rejected grievances (Any admin role) ---
 export const getAllRejectedGrievances = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin) {
       res.status(403).json({ 
         success: false, 
-        message: 'Only SuperAdmin can view all rejected grievances.' 
+        message: 'Admin authentication required to view all rejected grievances.' 
       });
       return;
     }
