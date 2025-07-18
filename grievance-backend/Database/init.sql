@@ -1,4 +1,16 @@
--- Database initialization script for DSEU Project 2025
+-- Database initialization script for DSEU Grievance Portal 2025
+-- This comprehensive script creates all necessary tables, indexes, functions, and initial data
+-- Consolidates functionality from multiple migration files into a single initialization script
+-- 
+-- Features included:
+-- - Core academic system (Campus, Program, Course, Student data)
+-- - Admin system with campus-based role management
+-- - Grievance management system with attachments
+-- - Enhanced attachment system supporting temporary uploads
+-- - Audit logging and system health monitoring
+-- - Pre-populated campus data for DSEU
+-- 
+-- Run this script on a fresh database to set up the complete system
 
 -- Drop tables if they exist (for fresh setup)
 DROP TABLE IF EXISTS attachment CASCADE;
@@ -128,7 +140,7 @@ CREATE TABLE PersonalInfo (
     UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata')
 );
 
--- Create Admin table
+-- Create Admin table with Campus support
 CREATE TABLE Admin (
     id SERIAL PRIMARY KEY,
     AdminId VARCHAR(50) UNIQUE NOT NULL,
@@ -136,10 +148,12 @@ CREATE TABLE Admin (
     Email VARCHAR(255) UNIQUE NOT NULL,
     Password VARCHAR(255),
     Role VARCHAR(50) DEFAULT 'admin',
+    CampusId INTEGER,
     IsActive BOOLEAN DEFAULT TRUE,
     LastLogin TIMESTAMP,
     CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata')
+    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
+    CONSTRAINT fk_admin_campus FOREIGN KEY (CampusId) REFERENCES CampusInfo(CampusId) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED
 );
 
 -- Create OTP table
@@ -357,13 +371,31 @@ COMMENT ON COLUMN ProgramOptions.GradingType IS 'Grading system: absolute, relat
 COMMENT ON COLUMN CourseEval.Lect IS 'Number of lecture hours per week';
 COMMENT ON COLUMN CourseEval.Pract IS 'Type of practical component: LAB, PROJECT, CASE_STUDY, NONE';
 COMMENT ON COLUMN CourseEval.CompTypes IS 'Comma-separated list of assessment components';
-COMMENT ON COLUMN AcademicInfo.Status IS 'Academic enrollment status: active, completed, withdrawn, etc.';
+COMMENT ON TABLE attachment IS 'Stores file attachments for grievances. Supports temporary uploads (Issuse_Id = NULL) and linked attachments';
+COMMENT ON COLUMN attachment.Issuse_Id IS 'Foreign key to grievance. NULL for temporary attachments, populated when linked to grievance';
+COMMENT ON COLUMN attachment.OriginalFileName IS 'Original filename as uploaded by user';
+COMMENT ON COLUMN attachment.FileName IS 'Secure filename used for storage';
+COMMENT ON COLUMN attachment.MimeType IS 'MIME type of the uploaded file';
+COMMENT ON COLUMN attachment.FileSize IS 'File size in bytes';
+COMMENT ON TABLE Admin_Campus_Assignment IS 'Manages which campuses and departments each admin is assigned to';
+COMMENT ON TABLE Admin_Audit_Log IS 'Tracks all administrative actions for security and compliance';
 
 -- Execute table check
 SELECT check_all_tables_exist();
 
--- Display table status
-SELECT * FROM get_table_status();
+-- Display enhanced table status
+SELECT * FROM get_enhanced_table_status();
+
+-- Check system health
+SELECT * FROM check_system_health();
+
+-- Display final summary
+SELECT 
+    'Database Initialization Complete' as status,
+    (SELECT COUNT(*) FROM CampusInfo) as campus_count,
+    (SELECT COUNT(*) FROM Admin WHERE IsActive = true) as active_admins,
+    (SELECT COUNT(*) FROM attachment WHERE Issuse_Id IS NULL) as temp_attachments,
+    NOW() AT TIME ZONE 'Asia/Kolkata' as completed_at;
 
 -- ...existing code...
 
@@ -410,17 +442,21 @@ CREATE TABLE grievancehistory (
     CONSTRAINT fk_history_grievance FOREIGN KEY (Issuse_Id) REFERENCES grievance(id) ON DELETE CASCADE
 );
 
--- Create attachment table
+-- Create attachment table with enhanced file support
 CREATE TABLE attachment (
     id SERIAL PRIMARY KEY,
-    Issuse_Id INTEGER NOT NULL,
+    Issuse_Id INTEGER,
     FileName VARCHAR(255) NOT NULL,
+    OriginalFileName VARCHAR(255) NOT NULL DEFAULT '',
     FilePath VARCHAR(255) NOT NULL,
+    MimeType VARCHAR(100) NOT NULL DEFAULT 'application/pdf',
+    FileSize INTEGER NOT NULL DEFAULT 0,
     UploadedBy VARCHAR(50) NOT NULL,
     UploadedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
     CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
     UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    CONSTRAINT fk_attachment_grievance FOREIGN KEY (Issuse_Id) REFERENCES grievance(id) ON DELETE CASCADE
+    CONSTRAINT fk_attachment_grievance FOREIGN KEY (Issuse_Id) REFERENCES grievance(id) ON DELETE CASCADE,
+    CONSTRAINT chk_attachment_issue_id CHECK (Issuse_Id IS NULL OR Issuse_Id > 0)
 );
 
 -- Create indexes for better performance
@@ -430,3 +466,139 @@ CREATE INDEX idx_grievance_date ON grievance(Date);
 CREATE INDEX idx_response_issueid ON response(Issuse_Id);
 CREATE INDEX idx_history_issueid ON grievancehistory(Issuse_Id);
 CREATE INDEX idx_attachment_issueid ON attachment(Issuse_Id);
+CREATE INDEX idx_attachment_temporary ON attachment(UploadedBy) WHERE Issuse_Id IS NULL;
+CREATE INDEX idx_admin_campus ON Admin(CampusId);
+CREATE INDEX idx_admin_role ON Admin(Role);
+CREATE INDEX idx_admin_active ON Admin(IsActive);
+
+-- ===================================================================
+-- ADMIN SYSTEM SUPPORT TABLES
+-- ===================================================================
+
+-- Create Admin_Campus_Assignment table
+CREATE TABLE IF NOT EXISTS Admin_Campus_Assignment (
+    id SERIAL PRIMARY KEY,
+    admin_id VARCHAR(50) NOT NULL,
+    campus_id INTEGER NOT NULL,
+    department VARCHAR(50) NOT NULL,
+    assigned_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
+    is_primary BOOLEAN DEFAULT FALSE,
+    CONSTRAINT fk_admin_campus_assignment_admin FOREIGN KEY (admin_id) REFERENCES Admin(AdminId) ON DELETE CASCADE,
+    CONSTRAINT fk_admin_campus_assignment_campus FOREIGN KEY (campus_id) REFERENCES CampusInfo(CampusId) ON DELETE CASCADE,
+    CONSTRAINT unique_admin_campus_dept UNIQUE (admin_id, campus_id, department)
+);
+
+-- Create Admin_Audit_Log table
+CREATE TABLE IF NOT EXISTS Admin_Audit_Log (
+    id SERIAL PRIMARY KEY,
+    admin_id VARCHAR(50) NOT NULL,
+    action_type VARCHAR(100) NOT NULL,
+    action_details JSONB,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
+    CONSTRAINT fk_admin_audit_admin FOREIGN KEY (admin_id) REFERENCES Admin(AdminId) ON DELETE CASCADE
+);
+
+-- Create indexes for admin support tables
+CREATE INDEX IF NOT EXISTS idx_admin_campus_assignment_admin ON Admin_Campus_Assignment(admin_id);
+CREATE INDEX IF NOT EXISTS idx_admin_campus_assignment_campus ON Admin_Campus_Assignment(campus_id);
+CREATE INDEX IF NOT EXISTS idx_admin_campus_assignment_dept ON Admin_Campus_Assignment(department);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_admin ON Admin_Audit_Log(admin_id);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_action ON Admin_Audit_Log(action_type);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON Admin_Audit_Log(created_at);
+
+-- ===================================================================
+-- CAMPUS DATA INITIALIZATION
+-- ===================================================================
+
+-- Insert default campus information for DSEU
+INSERT INTO CampusInfo (CampusId, CampusCode, CampusName) VALUES 
+(1016, 'DDC', 'DSEU Dwarka Campus'),
+(1001, 'DSC', 'DSEU Shakarpur Campus'),
+(1002, 'DKC', 'DSEU Kashmere Gate Campus'),  
+(1003, 'DPC', 'DSEU Pusa Campus'),
+(1004, 'DVC', 'DSEU Vivek Vihar Campus'),
+(1005, 'DRC', 'DSEU Rohini Campus'),
+(1006, 'DNC', 'DSEU Narela Campus'),
+(1007, 'DDC2', 'DSEU Dwarka Sector-9 Campus'),
+(1008, 'DBC', 'DSEU Bawana Campus'),
+(1009, 'DFC', 'DSEU Faridabad Campus'),
+(1010, 'DGC', 'DSEU Gurgaon Campus')
+ON CONFLICT (CampusId) DO UPDATE SET
+    CampusCode = EXCLUDED.CampusCode,
+    CampusName = EXCLUDED.CampusName,
+    UpdatedAt = (NOW() AT TIME ZONE 'Asia/Kolkata');
+
+-- Insert a fallback default campus
+INSERT INTO CampusInfo (CampusId, CampusCode, CampusName) VALUES 
+(1, 'MAIN', 'Main Campus')
+ON CONFLICT (CampusId) DO NOTHING;
+
+-- Update the sequence to avoid conflicts
+SELECT setval('campusinfo_campusid_seq', (SELECT COALESCE(MAX(CampusId), 2000) + 1 FROM CampusInfo), false);
+
+-- ===================================================================
+-- ADDITIONAL TRIGGERS
+-- ===================================================================
+
+-- Create triggers for admin support tables
+CREATE TRIGGER update_admin_campus_assignment_updated_at 
+    BEFORE UPDATE ON Admin_Campus_Assignment 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ===================================================================
+-- VERIFICATION AND STATUS FUNCTIONS
+-- ===================================================================
+
+-- Enhanced table status function
+CREATE OR REPLACE FUNCTION get_enhanced_table_status()
+RETURNS TABLE(tbl_name TEXT, record_count BIGINT, table_info TEXT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 'CampusInfo'::TEXT, COUNT(*), 'Campus locations'::TEXT FROM CampusInfo
+    UNION ALL
+    SELECT 'ProgramInfo'::TEXT, COUNT(*), 'Academic programs'::TEXT FROM ProgramInfo
+    UNION ALL
+    SELECT 'PersonalInfo'::TEXT, COUNT(*), 'Student records'::TEXT FROM PersonalInfo
+    UNION ALL
+    SELECT 'Admin'::TEXT, COUNT(*), 'Admin accounts'::TEXT FROM Admin
+    UNION ALL
+    SELECT 'Admin_Campus_Assignment'::TEXT, COUNT(*), 'Campus assignments'::TEXT FROM Admin_Campus_Assignment
+    UNION ALL
+    SELECT 'Admin_Audit_Log'::TEXT, COUNT(*), 'Audit trail'::TEXT FROM Admin_Audit_Log
+    UNION ALL
+    SELECT 'grievance'::TEXT, COUNT(*), 'Grievance records'::TEXT FROM grievance
+    UNION ALL
+    SELECT 'response'::TEXT, COUNT(*), 'Response records'::TEXT FROM response
+    UNION ALL
+    SELECT 'grievancehistory'::TEXT, COUNT(*), 'History records'::TEXT FROM grievancehistory
+    UNION ALL
+    SELECT 'attachment'::TEXT, COUNT(*), 'Total attachments'::TEXT FROM attachment
+    UNION ALL
+    SELECT 'attachment (temporary)'::TEXT, COUNT(*), 'Temporary attachments'::TEXT FROM attachment WHERE Issuse_Id IS NULL
+    UNION ALL
+    SELECT 'attachment (linked)'::TEXT, COUNT(*), 'Linked attachments'::TEXT FROM attachment WHERE Issuse_Id IS NOT NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- System health check function
+CREATE OR REPLACE FUNCTION check_system_health()
+RETURNS TABLE(component TEXT, status TEXT, details TEXT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 'Database Connection'::TEXT, 'OK'::TEXT, 'Connected successfully'::TEXT
+    UNION ALL
+    SELECT 'Campus Data'::TEXT, 
+           CASE WHEN EXISTS(SELECT 1 FROM CampusInfo WHERE CampusId = 1016) THEN 'OK' ELSE 'ERROR' END::TEXT,
+           CASE WHEN EXISTS(SELECT 1 FROM CampusInfo WHERE CampusId = 1016) THEN 'Main campus exists' ELSE 'Main campus missing' END::TEXT
+    UNION ALL
+    SELECT 'Admin System'::TEXT,
+           CASE WHEN EXISTS(SELECT 1 FROM Admin_Campus_Assignment) THEN 'OK' ELSE 'READY' END::TEXT,
+           'Admin assignment system available'::TEXT
+    UNION ALL
+    SELECT 'Attachment System'::TEXT,
+           CASE WHEN EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name = 'attachment' AND column_name = 'originalfilename') THEN 'OK' ELSE 'ERROR' END::TEXT,
+           'Attachment table schema check'::TEXT;
+END;
+$$ LANGUAGE plpgsql;
