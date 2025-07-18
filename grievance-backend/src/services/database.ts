@@ -12,7 +12,7 @@ import { CourseProgram, CreateCourseProgramData, UpdateCourseProgramData } from 
 import { CourseProgramCrudQueries } from "../db/queries";
  
 // PersonalInfo CRUD
-import { getPool } from "../db";
+import { getPool, getPoolSafe } from "../db";
 import ConnectionManager from "../db/connectionManager";
 import { AdminOTP, CreateAdminOTPData } from "../models/OTP";
 import { PersonalInfo, CreatePersonalInfoData, UpdatePersonalInfoData } from "../models/PersonalInfo";
@@ -20,6 +20,7 @@ import { OTP, CreateOTPData } from "../models/OTP";
 import { PersonalInfoQueries, OTPQueries, AdminQueries, ValidationQueries, AdminOTPQueries, TemporaryDataQueries, MarksValidationQueries } from "../db/queries";
 
 import { CampusQueries, PersonalInfoCrudQueries } from "../db/queries";
+import { get } from "http";
 
 // Campus type for TS
 export interface CampusData {
@@ -543,6 +544,7 @@ export class DatabaseService {  // CourseProgram CRUD
   static async createOTP(otpData: CreateOTPData): Promise<OTP> {
     try {
       // No longer automatically delete existing OTP - preserve time records
+      const pool = await getPoolSafe();// This waits for initialization
       const values = [otpData.rollno, otpData.otp, otpData.email, otpData.attempt || 3, otpData.createdat || new Date()];
       const result = await getPool().query(OTPQueries.CREATE_OTP, values);
       return result.rows[0];
@@ -818,6 +820,7 @@ export class DatabaseService {  // CourseProgram CRUD
 
   static async validateStudentName(rollNumber: string, expectedName: string): Promise<{ isValid: boolean; actualName?: string }> {
     try {
+      const pool = await getPoolSafe();
       const result = await getPool().query(MarksValidationQueries.GET_STUDENT_BY_ROLLNO, [rollNumber]);
       if (result.rows.length === 0) {
         return { isValid: false };
