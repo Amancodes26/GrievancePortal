@@ -1,6 +1,9 @@
 -- CampusInfo table
 CREATE TABLE IF NOT EXISTS CampusInfo (
     CampusId SERIAL PRIMARY KEY,
+    CampusCode VARCHAR(50) UNIQUE NOT NULL,
+    CampusName VARCHAR(255) NOT NULL,
+    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
     UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata')
 );
 
@@ -19,59 +22,18 @@ CREATE TABLE IF NOT EXISTS IssueList (
 -- ProgramInfo table
 CREATE TABLE IF NOT EXISTS ProgramInfo (
     ProgramId SERIAL PRIMARY KEY,
+    ProgramCode VARCHAR(50) UNIQUE NOT NULL,
+    ProgramName VARCHAR(255) NOT NULL,
+    ProgramType VARCHAR(100) NOT NULL,
+    TermType VARCHAR(50) NOT NULL, -- enum: semester, annual
+    Specialisation BOOLEAN DEFAULT FALSE,
+    SpecialCode VARCHAR(50),
+    SpecialName VARCHAR(255),
+    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
     UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata')
 );
 
--- ProgramOptions table
-CREATE TABLE IF NOT EXISTS ProgramOptions (
-    Id SERIAL PRIMARY KEY,
-    ProgramId INTEGER,
-    Term INTEGER,
-    Batch INTEGER,
-    GradingType VARCHAR(50),
-    CONSTRAINT unique_program_term_batch UNIQUE (ProgramId, Term, Batch)
-);
 
--- CampusProgram table
-CREATE TABLE IF NOT EXISTS CampusProgram (
-    Id SERIAL PRIMARY KEY,
-    CampusId INTEGER,
-    ProgramId INTEGER,
-    Batch INTEGER,
-    CONSTRAINT unique_campus_program_batch UNIQUE (CampusId, ProgramId, Batch)
-);
-
--- Course table
-CREATE TABLE IF NOT EXISTS Course (
-    CourseId SERIAL UNIQUE PRIMARY KEY,
-    CourseCode VARCHAR(50),
-    CourseName VARCHAR(255),
-    Term INTEGER,
-    CourseType VARCHAR(50),
-    Credit INTEGER,
-    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata')
-);
-
--- CourseEval table
-CREATE TABLE IF NOT EXISTS CourseEval (
-    Id SERIAL PRIMARY KEY,
-    CourseId INTEGER,
-    Lect INTEGER,
-    Tut INTEGER,
-    Pract INTEGER,
-    CompTypes VARCHAR(50),
-    CONSTRAINT fk_course_eval_course FOREIGN KEY (CourseId) REFERENCES Course(CourseId) ON DELETE CASCADE
-);
-
--- CourseProgram table
-CREATE TABLE IF NOT EXISTS CourseProgram (
-    Id SERIAL PRIMARY KEY,
-    ProgramId INTEGER,
-    CourseId INTEGER,
-    Batch INTEGER,
-    IsActive BOOLEAN DEFAULT TRUE,
-    CONSTRAINT unique_program_course_batch UNIQUE (ProgramId, CourseId, Batch)
-);
 
 -- StudentInfo table (renamed from PersonalInfo)
 CREATE TABLE IF NOT EXISTS StudentInfo (
@@ -108,35 +70,24 @@ CREATE TABLE IF NOT EXISTS Admin (
     CONSTRAINT fk_admin_campus FOREIGN KEY (CampusId) REFERENCES CampusInfo(CampusId)
 );
 
--- OTP table
-CREATE TABLE IF NOT EXISTS OTP (
-    Id SERIAL PRIMARY KEY,
-    RollNo VARCHAR(50),
-    Otp VARCHAR(10),
-    Email VARCHAR(255),
-    Attempt INTEGER,
-    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata')
-);
 
--- AdminOTP table
-CREATE TABLE IF NOT EXISTS AdminOTP (
-    Id SERIAL PRIMARY KEY,
-    AdminId VARCHAR(50),
-    Otp VARCHAR(10),
-    Email VARCHAR(255),
-    Attempt INTEGER,
-    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata')
-);
 
 -- AcademicInfo table
 CREATE TABLE IF NOT EXISTS AcademicInfo (
     Id SERIAL PRIMARY KEY,
-    RollNo VARCHAR(50),
-    ProgramId INTEGER,
-    AcademicYear INTEGER,
-    Term INTEGER,
-    CampusId INTEGER,
-    Batch INTEGER
+    RollNo VARCHAR(50) NOT NULL,
+    ProgramId INTEGER NOT NULL,
+    AcademicYear VARCHAR(20) NOT NULL,
+    Term INTEGER NOT NULL,
+    CampusId INTEGER NOT NULL,
+    Batch INTEGER NOT NULL,
+    Status VARCHAR(50) DEFAULT 'active',
+    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
+    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
+    CONSTRAINT fk_academicinfo_rollno FOREIGN KEY (RollNo) REFERENCES StudentInfo(RollNo) ON DELETE CASCADE,
+    CONSTRAINT fk_academicinfo_program FOREIGN KEY (ProgramId) REFERENCES ProgramInfo(ProgramId) ON DELETE CASCADE,
+    CONSTRAINT fk_academicinfo_campus FOREIGN KEY (CampusId) REFERENCES CampusInfo(CampusId) ON DELETE CASCADE,
+    CONSTRAINT unique_rollno_academicyear_term UNIQUE (RollNo, AcademicYear, Term)
 );
 
 -- Grievance table
@@ -189,6 +140,29 @@ CREATE TABLE IF NOT EXISTS Attachment (
 );
 
 -- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_campusinfo_code ON CampusInfo(CampusCode);
+CREATE INDEX IF NOT EXISTS idx_campusinfo_name ON CampusInfo(CampusName);
+CREATE INDEX IF NOT EXISTS idx_issuelist_code ON IssueList(IssueCode);
+CREATE INDEX IF NOT EXISTS idx_issuelist_level ON IssueList(IssueLevel);
+CREATE INDEX IF NOT EXISTS idx_issuelist_active ON IssueList(IsActive);
+CREATE INDEX IF NOT EXISTS idx_programinfo_code ON ProgramInfo(ProgramCode);
+CREATE INDEX IF NOT EXISTS idx_programinfo_name ON ProgramInfo(ProgramName);
+CREATE INDEX IF NOT EXISTS idx_programinfo_type ON ProgramInfo(ProgramType);
+CREATE INDEX IF NOT EXISTS idx_studentinfo_rollno ON StudentInfo(RollNo);
+CREATE INDEX IF NOT EXISTS idx_studentinfo_email ON StudentInfo(Email);
+CREATE INDEX IF NOT EXISTS idx_studentinfo_isverified ON StudentInfo(IsVerified);
+CREATE INDEX IF NOT EXISTS idx_studentinfo_campus ON StudentInfo(CampusId);
+CREATE INDEX IF NOT EXISTS idx_admin_adminid ON Admin(AdminId);
+CREATE INDEX IF NOT EXISTS idx_admin_email ON Admin(Email);
+CREATE INDEX IF NOT EXISTS idx_admin_campus ON Admin(CampusId);
+CREATE INDEX IF NOT EXISTS idx_admin_role ON Admin(Role);
+CREATE INDEX IF NOT EXISTS idx_admin_active ON Admin(IsActive);
+CREATE INDEX IF NOT EXISTS idx_academicinfo_rollno ON AcademicInfo(RollNo);
+CREATE INDEX IF NOT EXISTS idx_academicinfo_programid ON AcademicInfo(ProgramId);
+CREATE INDEX IF NOT EXISTS idx_academicinfo_campusid ON AcademicInfo(CampusId);
+CREATE INDEX IF NOT EXISTS idx_academicinfo_batch ON AcademicInfo(Batch);
+CREATE INDEX IF NOT EXISTS idx_academicinfo_year_term ON AcademicInfo(AcademicYear, Term);
+CREATE INDEX IF NOT EXISTS idx_academicinfo_status ON AcademicInfo(Status);
 CREATE INDEX IF NOT EXISTS idx_grievance_rollno ON Grievance(RollNo);
 CREATE INDEX IF NOT EXISTS idx_grievance_status ON Grievance(Status);
 CREATE INDEX IF NOT EXISTS idx_grievance_campus ON Grievance(CampusId);
@@ -220,13 +194,3 @@ CREATE TABLE IF NOT EXISTS Admin_Audit_Log (
 CREATE INDEX IF NOT EXISTS idx_admin_audit_admin ON Admin_Audit_Log(AdminId);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_action ON Admin_Audit_Log(Action_Type);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_timestamp ON Admin_Audit_Log(Timestamp);
-
--- Add indexes for issue list
-CREATE INDEX IF NOT EXISTS idx_issue_list_code ON IssueList(IssueCode);
-CREATE INDEX IF NOT EXISTS idx_issue_list_level ON IssueList(IssueLevel);
-CREATE INDEX IF NOT EXISTS idx_issue_list_active ON IssueList(IsActive);
-
--- Add indexes for admin table
-CREATE INDEX IF NOT EXISTS idx_admin_campus ON Admin(CampusId);
-CREATE INDEX IF NOT EXISTS idx_admin_role ON Admin(Role);
-CREATE INDEX IF NOT EXISTS idx_admin_active ON Admin(IsActive);

@@ -27,14 +27,7 @@ DROP TABLE IF EXISTS Attachment CASCADE;
 DROP TABLE IF EXISTS Grievance CASCADE;
 DROP TABLE IF EXISTS IssueList CASCADE;
 DROP TABLE IF EXISTS Admin_Audit_Log CASCADE;
-DROP TABLE IF EXISTS CourseEval CASCADE;
-DROP TABLE IF EXISTS ProgramOptions CASCADE;
-DROP TABLE IF EXISTS CourseProgram CASCADE;
-DROP TABLE IF EXISTS Course CASCADE;
-DROP TABLE IF EXISTS CampusProgram CASCADE;
-DROP TABLE IF EXISTS AdminOTP CASCADE;
 DROP TABLE IF EXISTS Admin CASCADE;
-DROP TABLE IF EXISTS OTP CASCADE;
 DROP TABLE IF EXISTS StudentInfo CASCADE;
 DROP TABLE IF EXISTS ProgramInfo CASCADE;
 DROP TABLE IF EXISTS CampusInfo CASCADE;
@@ -74,70 +67,7 @@ CREATE TABLE ProgramInfo (
     UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata')
 );
 
--- Create ProgramOptions table
-CREATE TABLE ProgramOptions (
-    Id SERIAL PRIMARY KEY,
-    ProgramId INTEGER NOT NULL,
-    Term INTEGER NOT NULL,
-    Batch INTEGER NOT NULL,
-    GradingType VARCHAR(50) NOT NULL, -- enum: absolute, relative
-    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    CONSTRAINT fk_program_options_program FOREIGN KEY (ProgramId) REFERENCES ProgramInfo(ProgramId) ON DELETE CASCADE,
-    CONSTRAINT unique_program_term_batch UNIQUE (ProgramId, Term, Batch)
-);
 
--- Create CampusProgram table (Many-to-Many relationship)
-CREATE TABLE CampusProgram (
-    Id SERIAL PRIMARY KEY,
-    CampusId INTEGER NOT NULL,
-    ProgramId INTEGER NOT NULL,
-    Batch INTEGER NOT NULL,
-    IsActive BOOLEAN DEFAULT TRUE,
-    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    CONSTRAINT fk_campus_program_campus FOREIGN KEY (CampusId) REFERENCES CampusInfo(CampusId) ON DELETE CASCADE,
-    CONSTRAINT fk_campus_program_program FOREIGN KEY (ProgramId) REFERENCES ProgramInfo(ProgramId) ON DELETE CASCADE,
-    CONSTRAINT unique_campus_program_batch UNIQUE (CampusId, ProgramId, Batch)
-);
-
--- Create Course table
-CREATE TABLE Course (
-    CourseId SERIAL UNIQUE PRIMARY KEY,
-    CourseCode VARCHAR(50) NOT NULL,
-    CourseName VARCHAR(255) NOT NULL,
-    Term INTEGER NOT NULL,
-    CourseType VARCHAR(50) NOT NULL,
-    Credit INTEGER NOT NULL,
-    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata')
-);
-
--- Create CourseEval table
-CREATE TABLE CourseEval (
-    Id SERIAL PRIMARY KEY,
-    CourseId INTEGER NOT NULL,
-    Lect INTEGER DEFAULT 0,
-    Pract INTEGER DEFAULT 0,
-    CompTypes VARCHAR(255) DEFAULT 'default',
-    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    CONSTRAINT fk_course_eval_course FOREIGN KEY (CourseId) REFERENCES Course(CourseId) ON DELETE CASCADE
-);
-
--- Create CourseProgram table (Many-to-Many relationship)
-CREATE TABLE CourseProgram (
-    Id SERIAL PRIMARY KEY,
-    ProgramId INTEGER NOT NULL,
-    CourseId INTEGER NOT NULL,
-    Batch INTEGER NOT NULL,
-    IsActive BOOLEAN DEFAULT TRUE,
-    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    CONSTRAINT fk_course_program_program FOREIGN KEY (ProgramId) REFERENCES ProgramInfo(ProgramId) ON DELETE CASCADE,
-    CONSTRAINT fk_course_program_course FOREIGN KEY (CourseId) REFERENCES Course(CourseId) ON DELETE CASCADE,
-    CONSTRAINT unique_program_course_batch UNIQUE (ProgramId, CourseId, Batch)
-);
 
 -- Create StudentInfo table 
 CREATE TABLE StudentInfo (
@@ -174,27 +104,7 @@ CREATE TABLE Admin (
     CONSTRAINT fk_admin_campus FOREIGN KEY (CampusId) REFERENCES CampusInfo(CampusId)
 );
 
--- Create OTP table
-CREATE TABLE OTP (
-    Id SERIAL PRIMARY KEY,
-    RollNo VARCHAR(50),
-    Otp VARCHAR(10),
-    Email VARCHAR(255),
-    Attempt INTEGER,
-    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    CONSTRAINT fk_otp_rollno FOREIGN KEY (RollNo) REFERENCES StudentInfo(RollNo) ON DELETE CASCADE
-);
 
--- Create AdminOTP table
-CREATE TABLE AdminOTP (
-    id SERIAL PRIMARY KEY,
-    AdminId VARCHAR(50) NOT NULL,
-    OTP INTEGER,
-    Email VARCHAR(255) NOT NULL,
-    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    Attempt INTEGER DEFAULT 3,
-    CONSTRAINT fk_admin_otp_adminid FOREIGN KEY (AdminId) REFERENCES Admin(AdminId) ON DELETE CASCADE
-);
 
 -- Create AcademicInfo table
 CREATE TABLE AcademicInfo (
@@ -286,32 +196,15 @@ CREATE INDEX idx_issuelist_active ON IssueList(IsActive);
 CREATE INDEX idx_programinfo_code ON ProgramInfo(ProgramCode);
 CREATE INDEX idx_programinfo_name ON ProgramInfo(ProgramName);
 CREATE INDEX idx_programinfo_type ON ProgramInfo(ProgramType);
-CREATE INDEX idx_programoptions_program ON ProgramOptions(ProgramId);
-CREATE INDEX idx_programoptions_term ON ProgramOptions(Term);
-CREATE INDEX idx_programoptions_batch ON ProgramOptions(Batch);
-CREATE INDEX idx_campusprogram_campus ON CampusProgram(CampusId);
-CREATE INDEX idx_campusprogram_program ON CampusProgram(ProgramId);
-CREATE INDEX idx_campusprogram_batch ON CampusProgram(Batch);
-CREATE INDEX idx_course_code ON Course(CourseCode);
-CREATE INDEX idx_course_name ON Course(CourseName);
-CREATE INDEX idx_course_type ON Course(CourseType);
-CREATE INDEX idx_courseeval_courseid ON CourseEval(CourseId);
-CREATE INDEX idx_courseprogram_program ON CourseProgram(ProgramId);
-CREATE INDEX idx_courseprogram_course ON CourseProgram(CourseId);
-CREATE INDEX idx_courseprogram_batch ON CourseProgram(Batch);
 CREATE INDEX idx_studentinfo_rollno ON StudentInfo(RollNo);
 CREATE INDEX idx_studentinfo_email ON StudentInfo(Email);
 CREATE INDEX idx_studentinfo_isverified ON StudentInfo(IsVerified);
 CREATE INDEX idx_studentinfo_campus ON StudentInfo(CampusId);
-CREATE INDEX idx_otp_rollno_email ON OTP(RollNo, Email);
-CREATE INDEX idx_otp_createdat ON OTP(CreatedAt);
 CREATE INDEX idx_admin_adminid ON Admin(AdminId);
 CREATE INDEX idx_admin_email ON Admin(Email);
 CREATE INDEX idx_admin_campus ON Admin(CampusId);
 CREATE INDEX idx_admin_role ON Admin(Role);
 CREATE INDEX idx_admin_active ON Admin(IsActive);
-CREATE INDEX idx_admin_otp_adminid_email ON AdminOTP(AdminId, Email);
-CREATE INDEX idx_admin_otp_createdat ON AdminOTP(CreatedAt);
 CREATE INDEX idx_academicinfo_rollno ON AcademicInfo(RollNo);
 CREATE INDEX idx_academicinfo_programid ON AcademicInfo(ProgramId);
 CREATE INDEX idx_academicinfo_campusid ON AcademicInfo(CampusId);
@@ -351,26 +244,6 @@ CREATE TRIGGER update_programinfo_updated_at
     BEFORE UPDATE ON ProgramInfo 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_programoptions_updated_at 
-    BEFORE UPDATE ON ProgramOptions 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_campusprogram_updated_at 
-    BEFORE UPDATE ON CampusProgram 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_course_updated_at 
-    BEFORE UPDATE ON Course 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_courseeval_updated_at 
-    BEFORE UPDATE ON CourseEval 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_courseprogram_updated_at 
-    BEFORE UPDATE ON CourseProgram 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_studentinfo_updated_at 
     BEFORE UPDATE ON StudentInfo 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -395,7 +268,7 @@ CREATE TRIGGER update_grievance_updated_at
 CREATE OR REPLACE FUNCTION check_all_tables_exist()
 RETURNS BOOLEAN AS $$
 DECLARE
-    required_tables TEXT[] := ARRAY['campusinfo', 'issuelist', 'programinfo', 'programoptions', 'campusprogram', 'course', 'courseeval', 'courseprogram', 'studentinfo', 'admin', 'otp', 'adminotp', 'academicinfo', 'grievance', 'tracking', 'attachment', 'admin_audit_log'];
+    required_tables TEXT[] := ARRAY['campusinfo', 'issuelist', 'programinfo', 'studentinfo', 'admin', 'academicinfo', 'grievance', 'tracking', 'attachment', 'admin_audit_log'];
     tbl_name TEXT;
     table_exists BOOLEAN;
     missing_tables TEXT[] := ARRAY[]::TEXT[];
@@ -434,23 +307,9 @@ BEGIN
     UNION ALL
     SELECT 'ProgramInfo'::TEXT, COUNT(*) FROM ProgramInfo
     UNION ALL
-    SELECT 'ProgramOptions'::TEXT, COUNT(*) FROM ProgramOptions
-    UNION ALL
-    SELECT 'CampusProgram'::TEXT, COUNT(*) FROM CampusProgram
-    UNION ALL
-    SELECT 'Course'::TEXT, COUNT(*) FROM Course
-    UNION ALL
-    SELECT 'CourseEval'::TEXT, COUNT(*) FROM CourseEval
-    UNION ALL
-    SELECT 'CourseProgram'::TEXT, COUNT(*) FROM CourseProgram
-    UNION ALL
     SELECT 'StudentInfo'::TEXT, COUNT(*) FROM StudentInfo
     UNION ALL
     SELECT 'Admin'::TEXT, COUNT(*) FROM Admin
-    UNION ALL
-    SELECT 'OTP'::TEXT, COUNT(*) FROM OTP
-    UNION ALL
-    SELECT 'AdminOTP'::TEXT, COUNT(*) FROM AdminOTP
     UNION ALL
     SELECT 'AcademicInfo'::TEXT, COUNT(*) FROM AcademicInfo
     UNION ALL
@@ -468,15 +327,8 @@ $$ LANGUAGE plpgsql;
 COMMENT ON TABLE CampusInfo IS 'Stores campus information for DSEU';
 COMMENT ON TABLE IssueList IS 'Stores predefined grievance categories with attachment requirements';
 COMMENT ON TABLE ProgramInfo IS 'Stores academic program information';
-COMMENT ON TABLE ProgramOptions IS 'Stores program-specific options like grading type for each term and batch';
-COMMENT ON TABLE CampusProgram IS 'Many-to-many relationship between campus and programs';
-COMMENT ON TABLE Course IS 'Stores course information';
-COMMENT ON TABLE CourseEval IS 'Stores course evaluation structure with lecture, practical components';
-COMMENT ON TABLE CourseProgram IS 'Many-to-many relationship between courses and programs';
-COMMENT ON TABLE OTP IS 'Stores OTP verification data for user authentication';
 COMMENT ON TABLE StudentInfo IS 'Stores student information and authentication data';
 COMMENT ON TABLE Admin IS 'Stores administrator accounts with role-based permissions';
-COMMENT ON TABLE AdminOTP IS 'Stores OTP verification data for admin authentication';
 COMMENT ON TABLE AcademicInfo IS 'Stores student academic enrollment information connecting students to programs, campuses, and academic terms';
 COMMENT ON TABLE Grievance IS 'Stores student grievance submissions with dual ID system';
 COMMENT ON TABLE Tracking IS 'Stores grievance status updates and admin responses with history-based tracking';
@@ -491,10 +343,6 @@ COMMENT ON COLUMN Tracking.StudentStatus IS 'Student-visible status for progress
 COMMENT ON COLUMN Tracking.RedirectTo IS 'AdminId if redirected to another admin';
 COMMENT ON COLUMN Tracking.RedirectFrom IS 'AdminId who redirected this grievance';
 COMMENT ON COLUMN Tracking.HasAttachments IS 'Whether this specific admin response has attachments';
-COMMENT ON COLUMN ProgramOptions.GradingType IS 'Grading system: absolute, relative, pass_fail';
-COMMENT ON COLUMN CourseEval.Lect IS 'Number of lecture hours per week';
-COMMENT ON COLUMN CourseEval.Pract IS 'Type of practical component: LAB, PROJECT, CASE_STUDY, NONE';
-COMMENT ON COLUMN CourseEval.CompTypes IS 'Comma-separated list of assessment components';
 
 -- ===================================================================
 -- CAMPUS DATA INITIALIZATION
