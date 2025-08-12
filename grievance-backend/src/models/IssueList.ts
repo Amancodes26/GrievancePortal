@@ -3,6 +3,7 @@ export interface IssueList {
   id?: number;
   issueCode: number;
   issueTitle: string;
+  category: 'ACADEMIC' | 'EXAM' | 'OTHER';
   requiredAttachments: string[];
   issuelevel: 'CAMPUS_LEVEL' | 'UNIVERSITY_LEVEL';
   isactive?: boolean;
@@ -14,6 +15,7 @@ export interface IssueList {
 export interface CreateIssueListData {
   issueCode: number;
   issueTitle: string;
+  category: 'ACADEMIC' | 'EXAM' | 'OTHER';
   requiredAttachments: string[];
   issuelevel: 'CAMPUS_LEVEL' | 'UNIVERSITY_LEVEL';
 }
@@ -21,6 +23,7 @@ export interface CreateIssueListData {
 // Interface for updating issue types
 export interface UpdateIssueListData {
   issueTitle?: string;
+  category?: 'ACADEMIC' | 'EXAM' | 'OTHER';
   requiredAttachments?: string[];
   issuelevel?: 'CAMPUS_LEVEL' | 'UNIVERSITY_LEVEL';
   isactive?: boolean;

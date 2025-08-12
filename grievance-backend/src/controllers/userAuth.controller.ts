@@ -1,58 +1,54 @@
 import { Request, Response, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { sendEmail } from "../services/email";
-import generateOtp from "../services/OtpGenerator";
-import { DatabaseService } from "../services/database";
-import { OTPService } from "../services/otpService";
-import {
-  getCurrentISTTime,
-  getTimeDifferenceInMinutes,
-} from "../utils/timeUtils";
-import { OTP_EXPIRY_MINUTES } from "../constants/otpConstants";
+import { getPool } from "../db";
+import { StudentInfoQueries } from "../db/queries";
 
 // Check if roll number exists
 const rollNumberExist: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { rollNumber } = req.params;
 
-    const user = await DatabaseService.findUserByRollNumber(rollNumber);
-    console.log(user);
-    if (user) {
-      // Create partial email
-
-      if (!user.email) {
-        res
-          .status(400)
-          .json({ message: "Email not found, Contact your campus incharge" });
-        return;
-      }
-
-      const email = user.email;
-      const [local, domain] = email.split("@");
-      let partialEmail = email;
-
-      if (local.length > 6) {
-        partialEmail =
-          local.substring(0, 2) +
-          "*".repeat(local.length - 4) +
-          local.substring(local.length - 2) +
-          "@" +
-          domain;
-      }
-
-      const isVerified = user.isverified;
-
-      const data = {
-        rollNumber: user.rollno,
-        email: partialEmail,
-        isVerified,
-      };
-
-      res.status(200).json(data);
-    } else {
+    const result = await getPool().query(StudentInfoQueries.GET_BY_ROLLNO, [rollNumber]);
+    
+    if (result.rows.length === 0) {
       res.status(400).json({ message: "User not found" });
+      return;
     }
+
+    const user = result.rows[0];
+    console.log(user);
+
+    if (!user.email) {
+      res
+        .status(400)
+        .json({ message: "Email not found, Contact your campus incharge" });
+      return;
+    }
+
+    // Create partial email
+    const email = user.email;
+    const [local, domain] = email.split("@");
+    let partialEmail = email;
+
+    if (local.length > 6) {
+      partialEmail =
+        local.substring(0, 2) +
+        "*".repeat(local.length - 4) +
+        local.substring(local.length - 2) +
+        "@" +
+        domain;
+    }
+
+    const isVerified = user.isverified;
+
+    const data = {
+      rollNumber: user.rollno,
+      email: partialEmail,
+      isVerified,
+    };
+
+    res.status(200).json(data);
   } catch (error) {
     console.error("Error checking roll number:", error);
     res.status(500).json({
@@ -62,7 +58,7 @@ const rollNumberExist: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
-// Verify partial email and send OTP
+// Verify email matches for user (no OTP)
 const verifyPartialEmail: RequestHandler = async (
   req: Request,
   res: Response
@@ -70,12 +66,14 @@ const verifyPartialEmail: RequestHandler = async (
   try {
     const { rollNumber, email } = req.params;
 
-    const user = await DatabaseService.findUserByRollNumber(rollNumber);
-
-    if (!user) {
+    const result = await getPool().query(StudentInfoQueries.GET_BY_ROLLNO, [rollNumber]);
+    
+    if (result.rows.length === 0) {
       res.status(400).json({ message: "User not found" });
       return;
     }
+
+    const user = result.rows[0];
 
     if (email !== user.email) {
       res.status(400).json({
@@ -83,23 +81,12 @@ const verifyPartialEmail: RequestHandler = async (
         verified: false,
       });
       return;
-    }    // Use the new OTP service to handle OTP logic
-    const otpResult = await OTPService.handleUserOTPRequest(
-      rollNumber,
-      user.email,
-      user.name
-    );
-    if (otpResult.success) {
-      res.status(200).json({
-        verified: true,
-        message: otpResult.message,
-      });
-    } else {
-      res.status(400).json({
-        verified: false,
-        message: otpResult.message,
-      });
     }
+
+    res.status(200).json({
+      verified: true,
+      message: "Email verified successfully. You can now set your password.",
+    });
   } catch (error) {
     console.error("Error verifying partial email:", error);
     res.status(500).json({
@@ -109,90 +96,7 @@ const verifyPartialEmail: RequestHandler = async (
   }
 };
 
-// Verify OTP
-const verifyOtp: RequestHandler = async (req :Request, res: Response) => {
-  try {
-    const { otp, rollNumber } = req.body;
-
-    if (!rollNumber || !otp) {
-      res.status(400).json({
-        success: false,
-        message: "rollNumber and otp are required",
-      });
-      return;
-    }
-
-    const user = await DatabaseService.findUserByRollNumber(rollNumber);
-
-    if (!user) {
-      res.status(400).json({
-        success: false,
-        message: "User not found",
-      });
-      return;
-    }
-    const storedOTP = await DatabaseService.findLatestOTP(
-      rollNumber,
-      user.email
-    );
-
-    if (!storedOTP) {
-      res.status(400).json({
-        success: false,
-        message: "OTP not found. Please request a new one.",
-      });
-      return;
-    }
-
-    // Check if OTP is null (expired)
-    if (storedOTP.otp === null) {
-      res.status(400).json({
-        success: false,
-        message: "OTP expired. Please request a new one.",
-      });
-      return;
-    } // Check if OTP is expired using IST time
-    const currentTime = getCurrentISTTime();
-    const otpCreatedAt = new Date(storedOTP.createdat!);
-    const timeDifferenceMinutes = getTimeDifferenceInMinutes(
-      otpCreatedAt,
-      currentTime
-    );
-
-    if (timeDifferenceMinutes > OTP_EXPIRY_MINUTES) {
-      await DatabaseService.expireOTP(rollNumber, user.email);
-      res.status(400).json({
-        success: false,
-        message: "OTP expired. Please request a new one.",
-      });
-      return;
-    }
-
-    if (storedOTP.otp !== parseInt(otp)) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid OTP.",
-      });
-      return;
-    }
-
-    // OTP is valid, expire it (set to null)
-    await DatabaseService.expireOTP(rollNumber, user.email);
-
-    res.status(200).json({
-      success: true,
-      message: "OTP verified successfully.",
-    });
-  } catch (error) {
-    console.error("Error verifying OTP:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-// Set password
+// Set password (simplified - no OTP verification needed)
 const setPassword: RequestHandler = async (req :Request, res: Response) => {
   try {
     const { rollNumber, password } = req.body;
@@ -205,9 +109,9 @@ const setPassword: RequestHandler = async (req :Request, res: Response) => {
       return;
     }
 
-    const user = await DatabaseService.findUserByRollNumber(rollNumber);
-
-    if (!user) {
+    const result = await getPool().query(StudentInfoQueries.GET_BY_ROLLNO, [rollNumber]);
+    
+    if (result.rows.length === 0) {
       res.status(400).json({
         success: false,
         message: "User not found",
@@ -220,10 +124,14 @@ const setPassword: RequestHandler = async (req :Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Update user with new password and set as verified
-    await DatabaseService.updateUser(rollNumber, {
-      password: hashedPassword,
-      isverified: true,
-    });
+    await getPool().query(
+      `UPDATE StudentInfo SET 
+        Password = $1, 
+        IsVerified = $2, 
+        UpdatedAt = (NOW() AT TIME ZONE 'Asia/Kolkata')
+      WHERE RollNo = $3 RETURNING *`,
+      [hashedPassword, true, rollNumber]
+    );
 
     res.status(200).json({
       success: true,
@@ -251,9 +159,19 @@ const login: RequestHandler = async (req :Request, res :Response) => {
       return;
     }
 
-    const user = await DatabaseService.findUserByRollNumber(rollNumber);
+    const result = await getPool().query(StudentInfoQueries.GET_BY_ROLLNO, [rollNumber]);
+    
+    if (result.rows.length === 0) {
+      res.status(401).json({
+        success: false,
+        message: "Invalid rollNumber or password",
+      });
+      return;
+    }
 
-    if (!user || !user.password) {
+    const user = result.rows[0];
+
+    if (!user.password) {
       res.status(401).json({
         success: false,
         message: "Invalid rollNumber or password",
@@ -310,59 +228,9 @@ const login: RequestHandler = async (req :Request, res :Response) => {
   }
 };
 
-// Resend OTP with same attempt count
-const resendOtp: RequestHandler = async (req: Request, res: Response) => {
-  try {
-    const { rollNumber } = req.body;
-
-    if (!rollNumber) {
-      res.status(400).json({
-        success: false,
-        message: "rollNumber is required",
-      });
-      return;
-    }
-
-    const user = await DatabaseService.findUserByRollNumber(rollNumber);
-
-    if (!user) {
-      res.status(400).json({
-        success: false,
-        message: "User not found",
-      });
-      return;
-    }    // Use OTPService to handle resend logic
-    const otpResult = await OTPService.resendUserOtp(
-      rollNumber,
-      user.email,
-      user.name
-    );
-
-    if (otpResult.success) {
-      res.status(200).json({
-        success: true,
-        message: otpResult.message,
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: otpResult.message,
-      });
-    }
-  } catch (error) {
-    console.error("Error resending OTP:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error while resending OTP",
-    });
-  }
-};
-
 export {
   rollNumberExist,
   verifyPartialEmail,
   login,
   setPassword,
-  verifyOtp,
-  resendOtp,
 };

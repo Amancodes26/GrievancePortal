@@ -6,7 +6,7 @@ import { getPool } from "./index";
 export async function setupDatabase(): Promise<void> {
   try {
     console.log('Setting up database...');
-    const initSqlPath = join(__dirname, '../../database/init.sql');
+    const initSqlPath = join(__dirname, '../../Database/init.sql');
     const initSql = readFileSync(initSqlPath, 'utf8');
     
     await getPool().query(initSql);
@@ -36,20 +36,13 @@ export async function checkAllTablesExistSimple(): Promise<boolean> {
   try {
     const requiredTables = [
       'campusinfo',
-      'programinfo',
-      'programoptions',
-      'campusprogram',
-      'course',
-      'courseeval',
-      'courseprogram',
-      'personalinfo',
+      'programinfo', 
+      'studentinfo',
       'admin',
-      'otp',
-      'adminotp',
       'academicinfo',
+      'issuelist',
       'grievance',
-      'response',
-      'grievancehistory',
+      'tracking',
       'attachment'
     ];
     const missingTables: string[] = [];
@@ -79,19 +72,12 @@ export async function getTableStatusSimple(): Promise<Array<{table_name: string,
     const tables = [
       { name: 'CampusInfo', table: 'campusinfo' },
       { name: 'ProgramInfo', table: 'programinfo' },
-      { name: 'ProgramOptions', table: 'programoptions' },
-      { name: 'CampusProgram', table: 'campusprogram' },
-      { name: 'Course', table: 'course' },
-      { name: 'CourseEval', table: 'courseeval' },
-      { name: 'CourseProgram', table: 'courseprogram' },
-      { name: 'PersonalInfo', table: 'personalinfo' },
+      { name: 'StudentInfo', table: 'studentinfo' },
       { name: 'Admin', table: 'admin' },
-      { name: 'OTP', table: 'otp' },
-      { name: 'AdminOTP', table: 'adminotp' },
       { name: 'AcademicInfo', table: 'academicinfo' },
+      { name: 'IssueList', table: 'issuelist' },
       { name: 'Grievance', table: 'grievance' },
-      { name: 'Response', table: 'response' },
-      { name: 'GrievanceHistory', table: 'grievancehistory' },
+      { name: 'Tracking', table: 'tracking' },
       { name: 'Attachment', table: 'attachment' }
     ];
 
@@ -126,20 +112,13 @@ export async function resetDatabase(): Promise<void> {
     // Drop all tables in correct order (dependencies first)
     const dropOrder = [
       'attachment',
-      'grievancehistory',
-      'response',
+      'tracking',
       'grievance',
-      'adminotp',
-      'otp',
       'academicinfo',
-      'courseeval',
-      'courseprogram',
-      'course',
-      'campusprogram',
-      'programoptions',
-      'programinfo',
+      'studentinfo',
       'admin',
-      'personalinfo',
+      'issuelist',
+      'programinfo',
       'campusinfo'
     ];
 
@@ -172,4 +151,178 @@ export async function checkTableExists(tableName: string): Promise<boolean> {
     console.error(`Error checking table ${tableName}:`, error);
     return false;
   }
+}
+
+/**
+ * Validate database schema integrity
+ */
+export async function validateSchema(): Promise<{valid: boolean, issues: string[]}> {
+  const issues: string[] = [];
+  
+  try {
+    // Check for proper foreign key relationships
+    const foreignKeyChecks = [
+      {
+        table: 'studentinfo',
+        column: 'campusid',
+        references: 'campusinfo(campusid)',
+        query: `
+          SELECT COUNT(*) as invalid_count 
+          FROM studentinfo s 
+          LEFT JOIN campusinfo c ON s.campusid = c.campusid 
+          WHERE s.campusid IS NOT NULL AND c.campusid IS NULL
+        `
+      },
+      {
+        table: 'grievance', 
+        column: 'rollno',
+        references: 'studentinfo(rollno)',
+        query: `
+          SELECT COUNT(*) as invalid_count 
+          FROM grievance g 
+          LEFT JOIN studentinfo s ON g.rollno = s.rollno 
+          WHERE s.rollno IS NULL
+        `
+      },
+      {
+        table: 'grievance',
+        column: 'campusid', 
+        references: 'campusinfo(campusid)',
+        query: `
+          SELECT COUNT(*) as invalid_count 
+          FROM grievance g 
+          LEFT JOIN campusinfo c ON g.campusid = c.campusid 
+          WHERE c.campusid IS NULL
+        `
+      },
+      {
+        table: 'grievance',
+        column: 'issuecode',
+        references: 'issuelist(issuecode)',
+        query: `
+          SELECT COUNT(*) as invalid_count 
+          FROM grievance g 
+          LEFT JOIN issuelist i ON g.issuecode = i.issuecode 
+          WHERE i.issuecode IS NULL
+        `
+      }
+    ];
+
+    for (const check of foreignKeyChecks) {
+      try {
+        const result = await getPool().query(check.query);
+        const invalidCount = parseInt(result.rows[0].invalid_count);
+        if (invalidCount > 0) {
+          issues.push(`${invalidCount} invalid foreign key references in ${check.table}.${check.column} -> ${check.references}`);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        issues.push(`Failed to check foreign key ${check.table}.${check.column}: ${errorMessage}`);
+      }
+    }
+
+    // Check for duplicate primary keys
+    const duplicateChecks = [
+      { table: 'campusinfo', key: 'campusid' },
+      { table: 'studentinfo', key: 'rollno' },
+      { table: 'admin', key: 'adminid' },
+      { table: 'grievance', key: 'grievanceid' }
+    ];
+
+    for (const check of duplicateChecks) {
+      try {
+        const result = await getPool().query(`
+          SELECT ${check.key}, COUNT(*) as count 
+          FROM ${check.table} 
+          GROUP BY ${check.key} 
+          HAVING COUNT(*) > 1
+        `);
+        if (result.rows.length > 0) {
+          issues.push(`Duplicate ${check.key} values found in ${check.table}: ${result.rows.length} duplicates`);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        issues.push(`Failed to check duplicates in ${check.table}: ${errorMessage}`);
+      }
+    }
+
+    return {
+      valid: issues.length === 0,
+      issues
+    };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    issues.push(`Schema validation failed: ${errorMessage}`);
+    return {
+      valid: false,
+      issues
+    };
+  }
+}
+
+/**
+ * Get comprehensive database health report
+ */
+export async function getDatabaseHealthReport(): Promise<any> {
+  try {
+    const tablesExist = await checkAllTablesExistSimple();
+    const tableStatus = await getTableStatusSimple();
+    const schemaValidation = await validateSchema();
+    
+    // Check for recent activity
+    const recentActivity = await getPool().query(`
+      SELECT 
+        (SELECT COUNT(*) FROM grievance WHERE createdat > NOW() - INTERVAL '7 days') as recent_grievances,
+        (SELECT COUNT(*) FROM studentinfo WHERE createdat > NOW() - INTERVAL '30 days') as recent_students,
+        (SELECT COUNT(*) FROM tracking WHERE updatedat > NOW() - INTERVAL '7 days') as recent_updates
+    `);
+
+    return {
+      timestamp: new Date().toISOString(),
+      overall_status: tablesExist && schemaValidation.valid ? 'healthy' : 'issues_detected',
+      tables: {
+        all_exist: tablesExist,
+        status: tableStatus
+      },
+      schema: schemaValidation,
+      recent_activity: recentActivity.rows[0],
+      recommendations: generateRecommendations(tableStatus, schemaValidation)
+    };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return {
+      timestamp: new Date().toISOString(),
+      overall_status: 'error',
+      error: errorMessage
+    };
+  }
+}
+
+function generateRecommendations(tableStatus: any[], schemaValidation: any): string[] {
+  const recommendations: string[] = [];
+  
+  // Check for empty critical tables
+  const criticalTables = ['campusinfo', 'issuelist'];
+  for (const critical of criticalTables) {
+    const table = tableStatus.find(t => t.table_name.toLowerCase().includes(critical.toLowerCase()));
+    if (table && (table.record_count === '0' || table.record_count === 'Error')) {
+      recommendations.push(`Initialize ${table.table_name} with sample data for proper system operation`);
+    }
+  }
+
+  // Schema issues
+  if (!schemaValidation.valid) {
+    recommendations.push('Fix foreign key constraint violations before production use');
+  }
+
+  // Performance recommendations
+  const largeDataTables = tableStatus.filter(t => parseInt(t.record_count) > 10000);
+  if (largeDataTables.length > 0) {
+    recommendations.push('Consider implementing data archiving for large tables: ' + 
+      largeDataTables.map(t => t.table_name).join(', '));
+  }
+
+  return recommendations;
 }

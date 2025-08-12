@@ -214,4 +214,11 @@ process.on('SIGTERM', async () => {
 });
 
 // Export utility functions for database operations
-export { setupDatabase, checkAllTablesExistSimple, getTableStatusSimple, resetDatabase } from "./setupDatabase";
+export { 
+  setupDatabase, 
+  checkAllTablesExistSimple, 
+  getTableStatusSimple, 
+  resetDatabase,
+  validateSchema,
+  getDatabaseHealthReport
+} from "./setupDatabase";

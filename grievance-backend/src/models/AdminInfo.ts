@@ -6,6 +6,7 @@ export interface AdminInfo {
     Phone?: string;
     Password?: string;
     Role?: 'DEPT_ADMIN' | 'CAMPUS_ADMIN' | 'SUPER_ADMIN';
+    Department?: 'ACADEMIC' | 'EXAM' | 'CAMPUS' | 'SYSTEM';
     IsVerified?: boolean;
     IsActive: boolean;
     LastLogin?: Date;
@@ -21,6 +22,7 @@ export interface CreateAdminInfoData {
     Email: string;
     Phone?: string;
     Role: 'DEPT_ADMIN' | 'CAMPUS_ADMIN' | 'SUPER_ADMIN';
+    Department: 'ACADEMIC' | 'EXAM' | 'CAMPUS' | 'SYSTEM';
     CampusId?: number;
 }
 
@@ -30,6 +32,7 @@ export interface UpdateAdminInfoData {
     IsVerified?: boolean;
     Phone?: string;
     Role?: 'DEPT_ADMIN' | 'CAMPUS_ADMIN' | 'SUPER_ADMIN';
+    Department?: 'ACADEMIC' | 'EXAM' | 'CAMPUS' | 'SYSTEM';
     IsActive?: boolean;
     LastLogin?: Date;
     CampusId?: number;

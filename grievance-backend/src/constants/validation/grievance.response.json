@@ -1,44 +1,68 @@
 {
   "type": "object",
   "properties": {
-    "responseId": {
+    "id": {
       "type": "integer",
-      "description": "Unique identifier for the response"
+      "description": "Unique identifier for the tracking response"
     },
-    "note": {
+    "grievanceId": {
       "type": "string",
-      "description": "Text description of the response"
+      "pattern": "^ISSUE-\\d{6}-\\d{5}$",
+      "description": "Grievance ID (FK to Grievance.grievanceId)"
     },
-    "status": {
+    "responseText": {
       "type": "string",
-      "maxLength": 50,
-      "description": "Status of the response"
+      "minLength": 10,
+      "maxLength": 1000,
+      "description": "Admin's response/update message"
     },
-    "stage": {
+    "adminStatus": {
       "type": "string",
-      "maxLength": 50,
-      "description": "Current stage of the grievance"
+      "enum": ["NEW", "PENDING", "REDIRECTED", "RESOLVED", "REJECTED"],
+      "description": "Admin workflow status"
     },
-    "dateTime": {
-      "type": "integer",
-      "description": "Unix timestamp of the response"
-    },
-    "currentStatus": {
+    "studentStatus": {
       "type": "string",
-      "maxLength": 255,
-      "description": "Current status description"
+      "enum": ["SUBMITTED", "UNDER_REVIEW", "IN_PROGRESS", "RESOLVED", "REJECTED"],
+      "description": "Student view status"
     },
-    "redirect": {
+    "responseBy": {
       "type": "string",
-      "description": "Redirection information or next step"
+      "description": "AdminId who provided the update"
+    },
+    "responseAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this update was made"
+    },
+    "redirectTo": {
+      "type": "string",
+      "description": "AdminId if redirected to another admin"
+    },
+    "redirectFrom": {
+      "type": "string",
+      "description": "AdminId who redirected this grievance"
+    },
+    "isRedirect": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is a redirect action"
+    },
+    "hasAttachments": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this update has attachments"
     }
   },
   "required": [
-    "responseId",
-    "note",
-    "status",
-    "stage",
-    "dateTime",
-    "currentStatus"
-  ]
+    "grievanceId",
+    "responseText",
+    "adminStatus",
+    "studentStatus",
+    "responseBy",
+    "responseAt",
+    "isRedirect",
+    "hasAttachments"
+  ],
+  "additionalProperties": false
 }

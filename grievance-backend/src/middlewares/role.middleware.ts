@@ -22,7 +22,7 @@ export const permit = (...allowedRoles: string[]) => {
 export const isAdmin = (req: Request, res: Response, next: NextFunction): void => {
   const adminRole = req.admin?.Role;
   
-  if (!adminRole || adminRole !== 'superadmin') {
+  if (!adminRole || adminRole !== 'SUPER_ADMIN') {
     res.status(403).json({ 
       message: 'Access denied - Super Admin role required',
       currentRole: adminRole || 'none'
@@ -35,7 +35,7 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction): void =
 export const isDeptAdmin = (req: Request, res: Response, next: NextFunction): void => {
   const adminRole = req.admin?.Role;
   
-  if (!adminRole || !['deptadmin', 'superadmin'].includes(adminRole)) {
+  if (!adminRole || !['DEPT_ADMIN', 'SUPER_ADMIN'].includes(adminRole)) {
     res.status(403).json({ 
       message: 'Access denied - Department Admin or Super Admin role required',
       currentRole: adminRole || 'none'

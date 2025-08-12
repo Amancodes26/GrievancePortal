@@ -1,13 +1,12 @@
 // Grievance interface for student grievance submissions
 export interface Grievance {
   id?: number;
-  grievanceId: string;           // Unique tracking ID (e.g., "GRV-2025-001")
+  grievanceId: string;           // Unique tracking ID (e.g., "GRV-2025-001", ISSUE-202508-00001)
   rollno: string;                // FK to StudentInfo.rollno
   campusId: number;              // FK to CampusInfo.campusid (auto-filled from student)
   issueCode: number;             // FK to IssueList.issueCode
   subject: string;               // Grievance subject/title
   description: string;           // Detailed description
-  status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED';
   hasAttachments: boolean;       // Whether attachments are included
   createdAt?: Date;
   updatedAt?: Date;
@@ -24,6 +23,5 @@ export interface CreateGrievanceData {
 
 // Interface for updating grievances (admin/system use)
 export interface UpdateGrievanceData {
-  status?: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED';
   updatedAt?: Date;
 }

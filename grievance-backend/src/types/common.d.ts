@@ -1,46 +1,79 @@
-// Standardized role definitions for the entire system
-export type AdminRole = 'academic' | 'exam' | 'campus' | 'superadmin';
+// Standardized role definitions aligned with current models
+export type DatabaseAdminRole = 'DEPT_ADMIN' | 'CAMPUS_ADMIN' | 'SUPER_ADMIN'; // For database storage
 export type UserRole = 'STUDENT' | 'DEPT_ADMIN' | 'CAMPUS_ADMIN' | 'SUPER_ADMIN';
+export type Department = 'ACADEMIC' | 'EXAM' | 'CAMPUS' | 'SYSTEM'; // Standardized department names
 
-// Campus information
+// Grievance status types from Tracking model
+export type AdminStatus = 'NEW' | 'PENDING' | 'REDIRECTED' | 'RESOLVED' | 'REJECTED';
+export type StudentStatus = 'SUBMITTED' | 'UNDER_REVIEW' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED';
+
+// Campus information aligned with CampusInfo model
 export interface CampusInfo {
-  CampusId: number;
-  CampusCode: string;
-  CampusName: string;
-  IsMainCampus?: boolean;
+  campusid: number;
+  campuscode: string;
+  campusname: string;
+  createdat?: Date;
+  updatedat?: Date;
 }
 
-// Admin information with campus
+// Admin information aligned with AdminInfo model
 export interface AdminInfo {
-  AdminId: string;
+  ID?: number;
+  AdminID: string;
   Name: string;
   Email: string;
-  Role: AdminRole;
-  CampusId?: number;
+  Phone?: string;
+  Role: DatabaseAdminRole;
+  Department: Department;
+  IsVerified?: boolean;
   IsActive: boolean;
-  CreatedAt: Date;
-  UpdatedAt: Date;
+  LastLogin?: Date;
+  CreatedAt?: Date;
+  UpdatedAt?: Date;
+  CampusId?: number;
 }
 
-// Admin campus assignment
-export interface AdminCampusAssignment {
-  id: number;
-  admin_id: string;
-  campus_id: number;
-  department: AdminRole;
-  assigned_at: Date;
-  is_primary: boolean;
+// Student information aligned with StudentInfo model  
+export interface StudentInfo {
+  rollno: string;
+  name: string;
+  email: string;
+  phone?: string;
+  campusid: number;
+  programid: number;
+  academicinfoid: number;
+  isactive: boolean;
+  createdat?: Date;
+  updatedat?: Date;
 }
 
-// Audit log entry
-export interface AdminAuditLog {
-  id: number;
-  admin_id: string;
-  action_type: string;
-  action_details: any;
-  ip_address?: string;
-  user_agent?: string;
-  created_at: Date;
+// Grievance information aligned with Grievance model
+export interface GrievanceInfo {
+  id?: number;
+  grievanceId: string;
+  rollno: string;
+  campusId: number;
+  issueCode: number;
+  subject: string;
+  description: string;
+  hasAttachments: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Tracking information aligned with Tracking model
+export interface TrackingInfo {
+  id?: number;
+  grievanceId: string;
+  responseText: string;
+  adminStatus: AdminStatus;
+  studentStatus: StudentStatus;
+  responseBy: string;
+  responseAt: Date;
+  redirectTo?: string;
+  redirectFrom?: string;
+  isRedirect: boolean;
+  hasAttachments: boolean;
 }
 
 export interface ApiResponse<T> {
