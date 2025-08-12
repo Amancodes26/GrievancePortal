@@ -1,13 +1,33 @@
 {
   "type": "object",
   "properties": {
-    "raised_by": {"type": "string", "format": "uuid"},
-    "subject": {"type": "string", "maxLength": 255},
-    "description": {"type": "string"},
-    "issue_type": {"type": "string"},
-    "campus_id": {"type": "integer"},
-    "branch_id": {"type": "integer"},
-    "priority": {"type": "string", "enum": ["LOW","MEDIUM","HIGH","CRITICAL"]}
+    "rollno": {
+      "type": "string",
+      "description": "Student roll number (FK to StudentInfo.rollno)"
+    },
+    "issueCode": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Issue code (FK to IssueList.issueCode)"
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 200,
+      "description": "Grievance subject/title"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 2000,
+      "description": "Detailed description of the grievance"
+    },
+    "hasAttachments": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether attachments are included"
+    }
   },
-  "required": ["raised_by","subject","description","issue_type","campus_id","branch_id","priority"]
+  "required": ["rollno", "issueCode", "subject", "description"],
+  "additionalProperties": false
 }

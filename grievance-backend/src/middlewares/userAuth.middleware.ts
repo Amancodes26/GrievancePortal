@@ -1,7 +1,7 @@
 import { Response, Request, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { DatabaseService } from "../services/database";
-import { PersonalInfo } from "../models/PersonalInfo";
+import { StudentInfo } from "../models/StudentInfo";
 
 interface JWTPayload {
   rollNumber: string;
@@ -60,7 +60,7 @@ export const verifyJWT = async (req: Request, res: Response, next: NextFunction)
       });
       return;
     }    // Find the user associated with the token
-    const user = await DatabaseService.findUserByRollNumber(decoded.rollNumber);
+    const user = await DatabaseService.getStudentInfoByRollNo(decoded.rollNumber);
     
     if (!user) {
       res.status(403).json({
@@ -72,8 +72,10 @@ export const verifyJWT = async (req: Request, res: Response, next: NextFunction)
     }        // Set user data in the format expected by controllers
     req.user = {
       rollNumber: user.rollno,  // Map rollno to rollNumber
+      rollno: user.rollno,      // Include original rollno field
       name: user.name,
       email: user.email,
+      campusid: user.campusid,  // Include campusid field
       role: 'STUDENT'  // Default role, can be enhanced later
     };
 

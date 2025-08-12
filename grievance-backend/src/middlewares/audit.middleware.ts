@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { SuperAdminService } from '../services/superAdmin.service';
+import { DatabaseAdminRole } from '../types/common';
 
 interface AuditConfig {
   actionType: string;
@@ -78,7 +79,7 @@ async function logActionAsync(req: Request, res: Response, config: AuditConfig, 
       }
     }
     
-    // Include IP address and user agent
+    // Include IP address
     actionDetails.ipAddress = req.ip || req.connection.remoteAddress;
     actionDetails.userAgent = req.get('User-Agent');
     
@@ -87,7 +88,9 @@ async function logActionAsync(req: Request, res: Response, config: AuditConfig, 
       actionType: config.actionType,
       actionDetails,
       ipAddress: actionDetails.ipAddress,
-      userAgent: actionDetails.userAgent
+      email: req.admin?.Email || 'unknown',
+      accessedResource: req.originalUrl,
+      role: req.admin?.Role || 'DEPT_ADMIN'
     });
     
   } catch (error) {

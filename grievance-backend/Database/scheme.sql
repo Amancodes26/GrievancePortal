@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS IssueList (
     Id SERIAL PRIMARY KEY,
     IssueCode INTEGER UNIQUE NOT NULL,
     IssueTitle TEXT NOT NULL,
+    Category VARCHAR(20) CHECK (Category IN ('ACADEMIC', 'EXAM', 'OTHER')) NOT NULL,
     RequiredAttachments TEXT[], -- Array of required attachment types
     IssueLevel VARCHAR(20) CHECK (IssueLevel IN ('CAMPUS_LEVEL', 'UNIVERSITY_LEVEL')) NOT NULL,
     IsActive BOOLEAN DEFAULT TRUE,
@@ -61,6 +62,7 @@ CREATE TABLE IF NOT EXISTS Admin (
     Phone VARCHAR(20),
     Password VARCHAR(255),
     Role VARCHAR(50) CHECK (Role IN ('DEPT_ADMIN', 'CAMPUS_ADMIN', 'SUPER_ADMIN')),
+    Department VARCHAR(50) CHECK (Department IN ('ACADEMIC', 'EXAM', 'CAMPUS', 'SYSTEM')),
     IsVerified BOOLEAN DEFAULT FALSE,
     IsActive BOOLEAN DEFAULT TRUE,
     LastLogin TIMESTAMP,
@@ -99,7 +101,6 @@ CREATE TABLE IF NOT EXISTS Grievance (
    IssueCode INTEGER NOT NULL,
    Subject VARCHAR(255) NOT NULL,
    Description TEXT NOT NULL,
-   Status VARCHAR(20) CHECK (Status IN ('PENDING', 'IN_PROGRESS', 'RESOLVED', 'REJECTED')) DEFAULT 'PENDING',
    HasAttachments BOOLEAN DEFAULT FALSE,
    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
@@ -164,7 +165,6 @@ CREATE INDEX IF NOT EXISTS idx_academicinfo_batch ON AcademicInfo(Batch);
 CREATE INDEX IF NOT EXISTS idx_academicinfo_year_term ON AcademicInfo(AcademicYear, Term);
 CREATE INDEX IF NOT EXISTS idx_academicinfo_status ON AcademicInfo(Status);
 CREATE INDEX IF NOT EXISTS idx_grievance_rollno ON Grievance(RollNo);
-CREATE INDEX IF NOT EXISTS idx_grievance_status ON Grievance(Status);
 CREATE INDEX IF NOT EXISTS idx_grievance_campus ON Grievance(CampusId);
 CREATE INDEX IF NOT EXISTS idx_grievance_issue ON Grievance(IssueCode);
 CREATE INDEX IF NOT EXISTS idx_grievance_created ON Grievance(CreatedAt);

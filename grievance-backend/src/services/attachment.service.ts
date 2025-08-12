@@ -26,13 +26,13 @@ export const saveAttachment = async (data: AttachmentData) => {
     
     return {
       id: result.rows[0].id,
-      issue_id: result.rows[0].issuse_id,
-      file_name: result.rows[0].filename,
-      file_path: result.rows[0].filepath,
-      uploaded_by: result.rows[0].uploadedby,
-      uploaded_at: result.rows[0].uploadedat,
-      file_size: data.fileSize,
-      mime_type: data.mimeType
+      grievanceId: result.rows[0].grievanceid,
+      fileName: result.rows[0].filename,
+      filePath: result.rows[0].filepath,
+      uploadedBy: result.rows[0].uploadedby,
+      uploadedAt: result.rows[0].uploadedat,
+      fileSize: data.fileSize,
+      mimeType: data.mimeType
     };
   } catch (error) {
     // Clean up file if database save fails
@@ -45,7 +45,7 @@ export const saveAttachment = async (data: AttachmentData) => {
 
 export const getAttachmentById = async (id: string) => {
   try {
-    const result = await ConnectionManager.query('SELECT * FROM attachment WHERE id = $1', [id]);
+    const result = await ConnectionManager.query(AttachmentQueries.GET_BY_ID, [id]);
     
     if (result.rows.length === 0) {
       return null;
@@ -54,28 +54,28 @@ export const getAttachmentById = async (id: string) => {
     const attachment = result.rows[0];
     return {
       id: attachment.id,
-      issue_id: attachment.issuse_id,
-      file_name: attachment.filename,
-      file_path: attachment.filepath,
-      uploaded_by: attachment.uploadedby,
-      uploaded_at: attachment.uploadedat
+      grievanceId: attachment.grievanceid,
+      fileName: attachment.filename,
+      filePath: attachment.filepath,
+      uploadedBy: attachment.uploadedby,
+      uploadedAt: attachment.uploadedat
     };
   } catch (error) {
     throw error;
   }
 };
 
-export const getAttachmentsByGrievanceId = async (issueId: string) => {
+export const getAttachmentsByGrievanceId = async (grievanceId: string) => {
   try {
-    const result = await ConnectionManager.query(AttachmentQueries.GET_BY_ISSUE_ID, [issueId]);
+    const result = await ConnectionManager.query(AttachmentQueries.GET_BY_GRIEVANCE_ID, [grievanceId]);
     
     return result.rows.map(attachment => ({
       id: attachment.id,
-      issue_id: attachment.issuse_id,
-      file_name: attachment.filename,
-      file_path: attachment.filepath,
-      uploaded_by: attachment.uploadedby,
-      uploaded_at: attachment.uploadedat
+      grievanceId: attachment.grievanceid,
+      fileName: attachment.filename,
+      filePath: attachment.filepath,
+      uploadedBy: attachment.uploadedby,
+      uploadedAt: attachment.uploadedat
     }));
   } catch (error) {
     throw error;
@@ -92,7 +92,7 @@ export const deleteAttachment = async (id: string, userId?: string) => {
     }
     
     // If userId is provided, check ownership
-    if (userId && attachment.uploaded_by !== userId) {
+    if (userId && attachment.uploadedBy !== userId) {
       throw new Error('Unauthorized: You can only delete your own attachments');
     }
     
@@ -105,8 +105,8 @@ export const deleteAttachment = async (id: string, userId?: string) => {
     
     // Delete physical file
     try {
-      if (fs.existsSync(attachment.file_path)) {
-        fs.unlinkSync(attachment.file_path);
+      if (fs.existsSync(attachment.filePath)) {
+        fs.unlinkSync(attachment.filePath);
       }
     } catch (fileError) {
       console.error('Error deleting physical file:', fileError);
@@ -128,19 +128,19 @@ export const validateAttachmentAccess = async (attachmentId: string, userId: str
     }
     
     // Check if user uploaded the file
-    if (attachment.uploaded_by === userId) {
+    if (attachment.uploadedBy === userId) {
       return { hasAccess: true, attachment };
     }
     
     // Check if user has access to the grievance
     const grievanceQuery = `
-      SELECT g.*, pi.id as user_id 
+      SELECT g.*, si.rollno 
       FROM grievance g 
-      JOIN personalinfo pi ON g.rollno = pi.rollno 
-      WHERE g.issuse_id = $1 AND pi.id = $2
+      JOIN studentinfo si ON g.rollno = si.rollno 
+      WHERE g.grievanceid = $1 AND si.rollno = $2
     `;
     
-    const grievanceResult = await ConnectionManager.query(grievanceQuery, [attachment.issue_id, userId]);
+    const grievanceResult = await ConnectionManager.query(grievanceQuery, [attachment.grievanceId, userId]);
     
     if (grievanceResult.rows.length > 0) {
       return { hasAccess: true, attachment };

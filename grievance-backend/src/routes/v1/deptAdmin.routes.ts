@@ -5,9 +5,7 @@ import {
   rejectGrievance,
   redirectGrievance,
   updateGrievanceStatus,
-  getDepartmentStats,
-  getAdminCampuses,
-  getMainCampusDepartmentAdmins
+  getDepartmentStats
 } from '../../controllers/Admin/DeptAdmin.controller';
 import { verifyAdminJWT } from '../../middlewares/adminAuth.middleware';
 import { permit } from '../../middlewares/role.middleware';
@@ -78,23 +76,6 @@ router.get('/stats',
   adminActionRateLimit,
   auditSystemAccess,
   asyncHandler(getDepartmentStats)
-);
-
-// Campus and Admin Management Routes
-router.get('/campuses', 
-  verifyAdminJWT, 
-  permit('academic', 'exam', 'campus', 'superadmin'), 
-  adminActionRateLimit,
-  auditSystemAccess,
-  asyncHandler(getAdminCampuses)
-);
-
-router.get('/main-campus/:department/admins', 
-  verifyAdminJWT, 
-  permit('academic', 'exam', 'campus', 'superadmin'), 
-  adminActionRateLimit,
-  auditSystemAccess,
-  asyncHandler(getMainCampusDepartmentAdmins)
 );
 
 export default router;

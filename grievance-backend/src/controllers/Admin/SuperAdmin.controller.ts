@@ -2,16 +2,15 @@ import { Request, Response } from 'express';
 import { SuperAdminService } from '../../services/superAdmin.service';
 import { DeptAdminService } from '../../services/deptAdmin.service';
 import * as grievanceService from '../../services/grievance.service';
-import { AdminRole } from '../../types/common';
+import { Department } from '../../types/common';
 
-// Allowed department roles for admin creation
-const ALLOWED_DEPT_ROLES: AdminRole[] = ['academic', 'exam', 'campus'];
+const ALLOWED_DEPT_ROLES: Department[] = ['ACADEMIC', 'EXAM', 'CAMPUS'];
 
 // --- 1. Create a new admin (SuperAdmin only) ---
 export const createAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
     // Validate super admin access
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin || req.admin.Role !== 'SUPER_ADMIN') {
       res.status(403).json({ 
         success: false, 
         message: 'Only SuperAdmin can create admins.' 
@@ -46,8 +45,7 @@ export const createAdmin = async (req: Request, res: Response): Promise<void> =>
       phone, 
       password, 
       role, 
-      campusId, 
-      isMainCampus 
+      campusId
     });
 
     res.status(201).json({ 
@@ -72,7 +70,7 @@ export const createAdmin = async (req: Request, res: Response): Promise<void> =>
 // --- 2. Get all admins with campus information ---
 export const getAllAdmins = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin || req.admin.Role !== 'SUPER_ADMIN') {
       res.status(403).json({ 
         success: false, 
         message: 'Only SuperAdmin can view all admins.' 
@@ -98,7 +96,7 @@ export const getAllAdmins = async (req: Request, res: Response): Promise<void> =
 // --- 3. Get admins by campus ---
 export const getAdminsByCampus = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin || req.admin.Role !== 'SUPER_ADMIN') {
       res.status(403).json({ 
         success: false, 
         message: 'Only SuperAdmin can view campus admins.' 
@@ -135,7 +133,7 @@ export const getAdminsByCampus = async (req: Request, res: Response): Promise<vo
 // --- 4. Assign admin to campus ---
 export const assignAdminToCampus = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin || req.admin.Role !== 'SUPER_ADMIN') {
       res.status(403).json({ 
         success: false, 
         message: 'Only SuperAdmin can assign admins to campuses.' 
@@ -184,7 +182,7 @@ export const assignAdminToCampus = async (req: Request, res: Response): Promise<
 // --- 5. Get campus admin statistics ---
 export const getCampusAdminStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin || req.admin.Role !== 'SUPER_ADMIN') {
       res.status(403).json({ 
         success: false, 
         message: 'Only SuperAdmin can view campus admin statistics.' 
@@ -210,7 +208,7 @@ export const getCampusAdminStats = async (req: Request, res: Response): Promise<
 // --- 6. Get system statistics ---
 export const getSystemStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin || req.admin.Role !== 'SUPER_ADMIN') {
       res.status(403).json({ 
         success: false, 
         message: 'Only SuperAdmin can view system statistics.' 
@@ -236,7 +234,7 @@ export const getSystemStats = async (req: Request, res: Response): Promise<void>
 // --- 7. Get admin audit logs ---
 export const getAdminAuditLogs = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin || req.admin.Role !== 'SUPER_ADMIN') {
       res.status(403).json({ 
         success: false, 
         message: 'Only SuperAdmin can view audit logs.' 
@@ -267,7 +265,7 @@ export const getAdminAuditLogs = async (req: Request, res: Response): Promise<vo
 // --- 8. Update admin information ---
 export const updateAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin || req.admin.Role !== 'SUPER_ADMIN') {
       res.status(403).json({ 
         success: false, 
         message: 'Only SuperAdmin can update admin information.' 
@@ -300,7 +298,7 @@ export const updateAdmin = async (req: Request, res: Response): Promise<void> =>
 // --- 9. Deactivate admin ---
 export const deactivateAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin || req.admin.Role !== 'SUPER_ADMIN') {
       res.status(403).json({ 
         success: false, 
         message: 'Only SuperAdmin can deactivate admins.' 
@@ -310,7 +308,7 @@ export const deactivateAdmin = async (req: Request, res: Response): Promise<void
 
     const { adminId } = req.params;
     
-    await SuperAdminService.deactivateAdmin(adminId);
+    await SuperAdminService.updateAdmin(adminId, { isactive: false });
     
     res.status(200).json({ 
       success: true, 
@@ -327,7 +325,7 @@ export const deactivateAdmin = async (req: Request, res: Response): Promise<void
 // --- 10. View all campus issues (SuperAdmin only) ---
 export const getAllCampusIssues = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin || req.admin.Role !== 'SUPER_ADMIN') {
       res.status(403).json({ 
         success: false, 
         message: 'Only SuperAdmin can view all campus issues.' 
@@ -335,7 +333,7 @@ export const getAllCampusIssues = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    const all = await grievanceService.getAllGrievancesWithCompleteDetails();
+    const all = await grievanceService.getAllGrievancesWithDetails();
     const campusIssues = all.filter((g: any) =>
       ['FACILITY', 'TECHNICAL', 'ADMINISTRATIVE', 'OTHER'].includes(g.issue_type?.toUpperCase())
     );
@@ -357,7 +355,7 @@ export const getAllCampusIssues = async (req: Request, res: Response): Promise<v
 // --- 11. View all department issues (SuperAdmin only) ---
 export const getAllDepartmentIssues = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.admin || req.admin.Role !== 'superadmin') {
+    if (!req.admin || req.admin.Role !== 'SUPER_ADMIN') {
       res.status(403).json({ 
         success: false, 
         message: 'Only SuperAdmin can view all department issues.' 
@@ -365,7 +363,7 @@ export const getAllDepartmentIssues = async (req: Request, res: Response): Promi
       return;
     }
 
-    const all = await grievanceService.getAllGrievancesWithCompleteDetails();
+    const all = await grievanceService.getAllGrievancesWithDetails();
     const deptIssues = all.filter((g: any) =>
       ['ACADEMIC', 'EXAM'].includes(g.issue_type?.toUpperCase())
     );
@@ -395,7 +393,7 @@ export const getAllIssues = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const all = await grievanceService.getAllGrievancesWithCompleteDetails();
+    const all = await grievanceService.getAllGrievancesWithDetails();
     
     res.status(200).json({ 
       success: true, 
@@ -422,7 +420,7 @@ export const getAllNewGrievances = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const all = await grievanceService.getAllGrievancesWithCompleteDetails();
+    const all = await grievanceService.getAllGrievancesWithDetails();
     const newGrievances = all.filter((g: any) => g.status === 'NEW');
     
     res.status(200).json({ 
@@ -450,7 +448,7 @@ export const getAllPendingGrievances = async (req: Request, res: Response): Prom
       return;
     }
 
-    const all = await grievanceService.getAllGrievancesWithCompleteDetails();
+    const all = await grievanceService.getAllGrievancesWithDetails();
     const pendingGrievances = all.filter((g: any) => g.status === 'PENDING');
     
     res.status(200).json({ 
@@ -478,7 +476,7 @@ export const getAllResolvedGrievances = async (req: Request, res: Response): Pro
       return;
     }
 
-    const all = await grievanceService.getAllGrievancesWithCompleteDetails();
+    const all = await grievanceService.getAllGrievancesWithDetails();
     const resolvedGrievances = all.filter((g: any) => g.status === 'RESOLVED');
     
     res.status(200).json({ 
@@ -506,7 +504,7 @@ export const getAllRejectedGrievances = async (req: Request, res: Response): Pro
       return;
     }
 
-    const all = await grievanceService.getAllGrievancesWithCompleteDetails();
+    const all = await grievanceService.getAllGrievancesWithDetails();
     const rejectedGrievances = all.filter((g: any) => g.status === 'REJECTED');
     
     res.status(200).json({ 
