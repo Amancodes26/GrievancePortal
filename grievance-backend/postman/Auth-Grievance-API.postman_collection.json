@@ -1,0 +1,689 @@
+{
+  "info": {
+    "name": "DSEU Grievance Portal - Auth & Grievance API",
+    "description": "Comprehensive API collection for Authentication and Grievance Management System\n\nPrincipal Engineer Standards:\n- Complete authentication flow testing\n- Role-based access verification\n- Grievance lifecycle management\n- Error handling validation\n- Performance monitoring\n\nVersion: 1.0.0\nRelease Date: August 26, 2025",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "auth-grievance-api-2025"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set base URL if not already set",
+          "if (!pm.globals.get('baseUrl')) {",
+          "    pm.globals.set('baseUrl', 'http://localhost:5000/api/v1');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "studentId",
+      "value": "TEST123",
+      "type": "string"
+    },
+    {
+      "key": "grievanceId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 AUTHENTICATION",
+      "description": "Complete authentication flow for users and admins",
+      "item": [
+        {
+          "name": "🎓 Student Authentication",
+          "item": [
+            {
+              "name": "1. Student Registration/Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"StudentId\": \"{{studentId}}\",\n  \"Email\": \"student@dseu.ac.in\",\n  \"Phone\": \"+919876543210\",\n  \"Name\": \"Test Student\",\n  \"Campus\": \"Main Campus\",\n  \"Program\": \"B.Tech\",\n  \"Semester\": 6\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/users/register",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "register"]
+                },
+                "description": "Register/Login student with complete profile information"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Test successful registration",
+                      "pm.test('Student registration successful', function () {",
+                      "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                      "});",
+                      "",
+                      "// Extract and save auth token",
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.data && response.data.token) {",
+                      "        pm.collectionVariables.set('authToken', response.data.token);",
+                      "        console.log('Student auth token saved');",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "2. Request OTP for Verification",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"Email\": \"student@dseu.ac.in\",\n  \"Type\": \"verification\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/users/request-otp",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "request-otp"]
+                },
+                "description": "Request OTP for email verification"
+              }
+            },
+            {
+              "name": "3. Verify OTP",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"Email\": \"student@dseu.ac.in\",\n  \"OTP\": \"123456\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/users/verify-otp",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "verify-otp"]
+                },
+                "description": "Verify OTP and complete authentication"
+              }
+            },
+            {
+              "name": "4. Get Student Profile",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/users/profile",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "profile"]
+                },
+                "description": "Get authenticated student profile information"
+              }
+            }
+          ]
+        },
+        {
+          "name": "👨‍💼 Admin Authentication",
+          "item": [
+            {
+              "name": "1. Admin Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"Email\": \"admin@dseu.ac.in\",\n  \"Password\": \"admin123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "login"]
+                },
+                "description": "Admin login with email and password"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Test successful login",
+                      "pm.test('Admin login successful', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "// Extract and save admin token",
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.data && response.data.token) {",
+                      "        pm.collectionVariables.set('adminToken', response.data.token);",
+                      "        console.log('Admin auth token saved');",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "2. Get Admin Profile",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/profile",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "profile"]
+                },
+                "description": "Get authenticated admin profile information"
+              }
+            },
+            {
+              "name": "3. Admin Dashboard Stats",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/dashboard",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "dashboard"]
+                },
+                "description": "Get admin dashboard statistics and overview"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📝 GRIEVANCE MANAGEMENT",
+      "description": "Complete grievance lifecycle management",
+      "item": [
+        {
+          "name": "👨‍🎓 Student Grievance Operations",
+          "item": [
+            {
+              "name": "1. Submit New Grievance",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"IssueCode\": \"ACAD001\",\n  \"Title\": \"Academic Issue - Grade Discrepancy\",\n  \"Description\": \"There is a discrepancy in my semester grades for Computer Science course. The displayed grade does not match my performance.\",\n  \"Priority\": \"Medium\",\n  \"Campus\": \"Main Campus\",\n  \"Department\": \"Computer Science\",\n  \"ExpectedResolutionDate\": \"2025-09-15\",\n  \"ContactPreference\": \"Email\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/grievances",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances"]
+                },
+                "description": "Submit a new grievance with complete details"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Test successful grievance submission",
+                      "pm.test('Grievance submitted successfully', function () {",
+                      "    pm.expect(pm.response.code).to.equal(201);",
+                      "});",
+                      "",
+                      "// Extract and save grievance ID",
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.data && response.data.grievance && response.data.grievance.GrievanceId) {",
+                      "        pm.collectionVariables.set('grievanceId', response.data.grievance.GrievanceId);",
+                      "        console.log('Grievance ID saved: ' + response.data.grievance.GrievanceId);",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "2. Get My Grievances",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/grievances/my?status=all&limit=10&offset=0",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances", "my"],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "all"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0"
+                    }
+                  ]
+                },
+                "description": "Get all grievances submitted by authenticated student"
+              }
+            },
+            {
+              "name": "3. Get Specific Grievance Details",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances", "{{grievanceId}}"]
+                },
+                "description": "Get detailed information for a specific grievance"
+              }
+            },
+            {
+              "name": "4. Update Grievance (Student)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"Description\": \"Updated description: The grade discrepancy affects my overall CGPA calculation. I have attached supporting documents for verification.\",\n  \"Priority\": \"High\",\n  \"ContactPreference\": \"Phone\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances", "{{grievanceId}}"]
+                },
+                "description": "Update grievance details (only allowed before admin processing)"
+              }
+            },
+            {
+              "name": "5. Get Grievance History",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}/history",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances", "{{grievanceId}}", "history"]
+                },
+                "description": "Get complete history and tracking information for grievance"
+              }
+            }
+          ]
+        },
+        {
+          "name": "👨‍💼 Admin Grievance Management",
+          "item": [
+            {
+              "name": "1. Get All Grievances (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/grievances?status=pending&priority=all&campus=all&department=all&limit=20&offset=0&sortBy=SubmissionDate&sortOrder=desc",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances"],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "pending"
+                    },
+                    {
+                      "key": "priority",
+                      "value": "all"
+                    },
+                    {
+                      "key": "campus",
+                      "value": "all"
+                    },
+                    {
+                      "key": "department",
+                      "value": "all"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0"
+                    },
+                    {
+                      "key": "sortBy",
+                      "value": "SubmissionDate"
+                    },
+                    {
+                      "key": "sortOrder",
+                      "value": "desc"
+                    }
+                  ]
+                },
+                "description": "Get all grievances with advanced filtering and sorting (Admin only)"
+              }
+            },
+            {
+              "name": "2. Assign Grievance to Admin",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"AssignedTo\": \"admin@dseu.ac.in\",\n  \"Status\": \"In Progress\",\n  \"AdminNotes\": \"Assigning to subject expert for detailed review\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}/assign",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances", "{{grievanceId}}", "assign"]
+                },
+                "description": "Assign grievance to specific admin for processing"
+              }
+            },
+            {
+              "name": "3. Update Grievance Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"Status\": \"Under Review\",\n  \"ResponseText\": \"Your grievance is being reviewed by the academic department. We will contact you within 3-5 working days with updates.\",\n  \"Priority\": \"High\",\n  \"AdminNotes\": \"Escalated to department head for immediate attention\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}/status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances", "{{grievanceId}}", "status"]
+                },
+                "description": "Update grievance status with admin response"
+              }
+            },
+            {
+              "name": "4. Resolve Grievance",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"Status\": \"Resolved\",\n  \"ResponseText\": \"Your grade discrepancy has been reviewed and corrected. The updated grade is now reflected in your academic record. Please check your student portal for the updated information.\",\n  \"ResolutionSummary\": \"Grade corrected from B to A+ after verification of exam papers and coursework\",\n  \"AdminNotes\": \"Issue resolved successfully. Student notified via email.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}/resolve",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances", "{{grievanceId}}", "resolve"]
+                },
+                "description": "Mark grievance as resolved with final response"
+              }
+            },
+            {
+              "name": "5. Get Grievance Analytics",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/grievances/analytics?startDate=2025-08-01&endDate=2025-08-31&groupBy=status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances", "analytics"],
+                  "query": [
+                    {
+                      "key": "startDate",
+                      "value": "2025-08-01"
+                    },
+                    {
+                      "key": "endDate",
+                      "value": "2025-08-31"
+                    },
+                    {
+                      "key": "groupBy",
+                      "value": "status"
+                    }
+                  ]
+                },
+                "description": "Get grievance analytics and statistics for reporting"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔍 VALIDATION & ERROR TESTING",
+      "description": "Test error handling and validation",
+      "item": [
+        {
+          "name": "1. Invalid Login Credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Email\": \"invalid@test.com\",\n  \"Password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Should return 401 for invalid credentials', function () {",
+                  "    pm.expect(pm.response.code).to.equal(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Unauthorized Grievance Access",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/grievances",
+              "host": ["{{baseUrl}}"],
+              "path": ["grievances"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Should return 401 for unauthorized access', function () {",
+                  "    pm.expect(pm.response.code).to.equal(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Invalid Grievance Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Title\": \"AB\",\n  \"Description\": \"\",\n  \"Priority\": \"InvalidPriority\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/grievances",
+              "host": ["{{baseUrl}}"],
+              "path": ["grievances"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Should return 400 for invalid data', function () {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

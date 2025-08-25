@@ -69,17 +69,25 @@ export const setAdminPassword: RequestHandler = async (req, res) => {
   if (!email || !newPassword) {
     res.status(400).json({ success: false, message: "Email and new password are required" });
     return;
-  }  try {
+  }
+
+  try {
     const result = await getPool().query(AdminQueries.GET_BY_EMAIL, [email]);
     if (result.rows.length === 0) {
       res.status(404).json({ success: false, message: "Admin not found" });
       return;
-    }    const salt = await bcrypt.genSalt(10);
+    }
+
+    const admin = result.rows[0];
+    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
-    await getPool().query(AdminQueries.UPDATE_PASSWORD, [hashedPassword, email]);
+    
+    // Fix: Use AdminId instead of email in the UPDATE_PASSWORD query
+    await getPool().query(AdminQueries.UPDATE_PASSWORD, [admin.adminid, hashedPassword]);
     res.status(200).json({ success: true, message: "Password updated successfully" });
     return;
   } catch (err) {
+    console.error("Error updating admin password:", err);
     res.status(500).json({ success: false, message: "Internal server error" });
     return;
   }

@@ -1,7 +1,7 @@
 import { Response, Request, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { DatabaseService } from "../services/database";
-import { StudentInfo } from "../models/StudentInfo";
+import { PersonalInfo } from "../models/PersonalInfo";
 
 interface JWTPayload {
   rollNumber: string;
@@ -60,7 +60,7 @@ export const verifyJWT = async (req: Request, res: Response, next: NextFunction)
       });
       return;
     }    // Find the user associated with the token
-    const user = await DatabaseService.getStudentInfoByRollNo(decoded.rollNumber);
+    const user = await DatabaseService.getPersonalInfoByRollNo(decoded.rollNumber);
     
     if (!user) {
       res.status(403).json({

@@ -2,14 +2,14 @@ import { Request, Response, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { getPool } from "../db";
-import { StudentInfoQueries } from "../db/queries";
+import { PersonalInfoQueries } from "../db/queries";
 
 // Check if roll number exists
 const rollNumberExist: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { rollNumber } = req.params;
 
-    const result = await getPool().query(StudentInfoQueries.GET_BY_ROLLNO, [rollNumber]);
+    const result = await getPool().query(PersonalInfoQueries.GET_BY_ROLLNO, [rollNumber]);
     
     if (result.rows.length === 0) {
       res.status(400).json({ message: "User not found" });
@@ -66,7 +66,7 @@ const verifyPartialEmail: RequestHandler = async (
   try {
     const { rollNumber, email } = req.params;
 
-    const result = await getPool().query(StudentInfoQueries.GET_BY_ROLLNO, [rollNumber]);
+    const result = await getPool().query(PersonalInfoQueries.GET_BY_ROLLNO, [rollNumber]);
     
     if (result.rows.length === 0) {
       res.status(400).json({ message: "User not found" });
@@ -109,7 +109,7 @@ const setPassword: RequestHandler = async (req :Request, res: Response) => {
       return;
     }
 
-    const result = await getPool().query(StudentInfoQueries.GET_BY_ROLLNO, [rollNumber]);
+    const result = await getPool().query(PersonalInfoQueries.GET_BY_ROLLNO, [rollNumber]);
     
     if (result.rows.length === 0) {
       res.status(400).json({
@@ -125,7 +125,7 @@ const setPassword: RequestHandler = async (req :Request, res: Response) => {
 
     // Update user with new password and set as verified
     await getPool().query(
-      `UPDATE StudentInfo SET 
+      `UPDATE PersonalInfo SET 
         Password = $1, 
         IsVerified = $2, 
         UpdatedAt = (NOW() AT TIME ZONE 'Asia/Kolkata')
@@ -159,7 +159,7 @@ const login: RequestHandler = async (req :Request, res :Response) => {
       return;
     }
 
-    const result = await getPool().query(StudentInfoQueries.GET_BY_ROLLNO, [rollNumber]);
+    const result = await getPool().query(PersonalInfoQueries.GET_BY_ROLLNO, [rollNumber]);
     
     if (result.rows.length === 0) {
       res.status(401).json({
