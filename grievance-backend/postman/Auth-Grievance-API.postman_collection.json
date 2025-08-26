@@ -65,7 +65,50 @@
           "name": "🎓 Student Authentication",
           "item": [
             {
-              "name": "1. Student Registration/Login",
+              "name": "1. Check Roll Number Exists",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/auth/rollNumber-exist/{{studentId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "auth", "rollNumber-exist", "{{studentId}}"]
+                },
+                "description": "Check if a student roll number exists in the system"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Test successful response",
+                      "pm.test('Roll number check successful', function () {",
+                      "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                      "});",
+                      "",
+                      "// Log the response",
+                      "console.log('Roll number check response:', pm.response.json());"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "2. Verify Partial Email",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/auth/verify-partial-email/{{studentId}}/student@dseu.ac.in",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "auth", "verify-partial-email", "{{studentId}}", "student@dseu.ac.in"]
+                },
+                "description": "Verify if the email matches the roll number"
+              }
+            },
+            {
+              "name": "3. Student Login",
               "request": {
                 "method": "POST",
                 "header": [
@@ -76,14 +119,14 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"StudentId\": \"{{studentId}}\",\n  \"Email\": \"student@dseu.ac.in\",\n  \"Phone\": \"+919876543210\",\n  \"Name\": \"Test Student\",\n  \"Campus\": \"Main Campus\",\n  \"Program\": \"B.Tech\",\n  \"Semester\": 6\n}"
+                  "raw": "{\n  \"rollNumber\": \"{{studentId}}\",\n  \"password\": \"student123\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/users/register",
+                  "raw": "{{baseUrl}}/users/auth/login",
                   "host": ["{{baseUrl}}"],
-                  "path": ["users", "register"]
+                  "path": ["users", "auth", "login"]
                 },
-                "description": "Register/Login student with complete profile information"
+                "description": "Student login with roll number and password"
               },
               "event": [
                 {
@@ -91,8 +134,8 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "// Test successful registration",
-                      "pm.test('Student registration successful', function () {",
+                      "// Test successful login",
+                      "pm.test('Student login successful', function () {",
                       "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
                       "});",
                       "",
@@ -110,7 +153,7 @@
               ]
             },
             {
-              "name": "2. Request OTP for Verification",
+              "name": "4. Set Student Password",
               "request": {
                 "method": "POST",
                 "header": [
@@ -121,54 +164,14 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"Email\": \"student@dseu.ac.in\",\n  \"Type\": \"verification\"\n}"
+                  "raw": "{\n  \"rollNumber\": \"{{studentId}}\",\n  \"password\": \"newPassword123\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/users/request-otp",
+                  "raw": "{{baseUrl}}/users/auth/set-password",
                   "host": ["{{baseUrl}}"],
-                  "path": ["users", "request-otp"]
+                  "path": ["users", "auth", "set-password"]
                 },
-                "description": "Request OTP for email verification"
-              }
-            },
-            {
-              "name": "3. Verify OTP",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"Email\": \"student@dseu.ac.in\",\n  \"OTP\": \"123456\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/users/verify-otp",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["users", "verify-otp"]
-                },
-                "description": "Verify OTP and complete authentication"
-              }
-            },
-            {
-              "name": "4. Get Student Profile",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/users/profile",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["users", "profile"]
-                },
-                "description": "Get authenticated student profile information"
+                "description": "Set or change student password"
               }
             }
           ]
@@ -188,12 +191,12 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"Email\": \"admin@dseu.ac.in\",\n  \"Password\": \"admin123\"\n}"
+                  "raw": "{\n  \"email\": \"admin@dseu.ac.in\",\n  \"password\": \"admin123\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/admin/login",
+                  "raw": "{{baseUrl}}/admin/auth/login",
                   "host": ["{{baseUrl}}"],
-                  "path": ["admin", "login"]
+                  "path": ["admin", "auth", "login"]
                 },
                 "description": "Admin login with email and password"
               },
@@ -222,7 +225,29 @@
               ]
             },
             {
-              "name": "2. Get Admin Profile",
+              "name": "2. Set Admin Password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@dseu.ac.in\",\n  \"newPassword\": \"newAdminPassword123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/auth/set-password",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "auth", "set-password"]
+                },
+                "description": "Set or change admin password"
+              }
+            },
+            {
+              "name": "3. Get Admin Profile",
               "request": {
                 "method": "GET",
                 "header": [
@@ -240,7 +265,7 @@
               }
             },
             {
-              "name": "3. Admin Dashboard Stats",
+              "name": "4. Admin Dashboard Stats",
               "request": {
                 "method": "GET",
                 "header": [
@@ -255,6 +280,19 @@
                   "path": ["admin", "dashboard"]
                 },
                 "description": "Get admin dashboard statistics and overview"
+              }
+            },
+            {
+              "name": "5. Database Migration Info",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/migrate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "migrate"]
+                },
+                "description": "Get database migration status and table information"
               }
             }
           ]
@@ -284,7 +322,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"IssueCode\": \"ACAD001\",\n  \"Title\": \"Academic Issue - Grade Discrepancy\",\n  \"Description\": \"There is a discrepancy in my semester grades for Computer Science course. The displayed grade does not match my performance.\",\n  \"Priority\": \"Medium\",\n  \"Campus\": \"Main Campus\",\n  \"Department\": \"Computer Science\",\n  \"ExpectedResolutionDate\": \"2025-09-15\",\n  \"ContactPreference\": \"Email\"\n}"
+                  "raw": "{\n  \"issueCode\": 1001,\n  \"subject\": \"Academic Issue - Grade Discrepancy\",\n  \"description\": \"There is a discrepancy in my semester grades for Computer Science course. The displayed grade does not match my performance.\",\n  \"hasAttachments\": false\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/grievances",
@@ -307,9 +345,9 @@
                       "// Extract and save grievance ID",
                       "if (pm.response.code === 201) {",
                       "    const response = pm.response.json();",
-                      "    if (response.data && response.data.grievance && response.data.grievance.GrievanceId) {",
-                      "        pm.collectionVariables.set('grievanceId', response.data.grievance.GrievanceId);",
-                      "        console.log('Grievance ID saved: ' + response.data.grievance.GrievanceId);",
+                      "    if (response.data && response.data.id) {",
+                      "        pm.collectionVariables.set('grievanceId', response.data.id);",
+                      "        console.log('Grievance ID saved: ' + response.data.id);",
                       "    }",
                       "}"
                     ]
@@ -328,23 +366,9 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/grievances/my?status=all&limit=10&offset=0",
+                  "raw": "{{baseUrl}}/grievances/my-grievances",
                   "host": ["{{baseUrl}}"],
-                  "path": ["grievances", "my"],
-                  "query": [
-                    {
-                      "key": "status",
-                      "value": "all"
-                    },
-                    {
-                      "key": "limit",
-                      "value": "10"
-                    },
-                    {
-                      "key": "offset",
-                      "value": "0"
-                    }
-                  ]
+                  "path": ["grievances", "my-grievances"]
                 },
                 "description": "Get all grievances submitted by authenticated student"
               }
@@ -368,7 +392,7 @@
               }
             },
             {
-              "name": "4. Update Grievance (Student)",
+              "name": "4. Update Grievance Status",
               "request": {
                 "method": "PUT",
                 "header": [
@@ -383,18 +407,31 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"Description\": \"Updated description: The grade discrepancy affects my overall CGPA calculation. I have attached supporting documents for verification.\",\n  \"Priority\": \"High\",\n  \"ContactPreference\": \"Phone\"\n}"
+                  "raw": "{\n  \"status\": \"Updated\",\n  \"description\": \"Updated description: The grade discrepancy affects my overall CGPA calculation.\",\n  \"priority\": \"High\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/grievances/{{grievanceId}}",
                   "host": ["{{baseUrl}}"],
                   "path": ["grievances", "{{grievanceId}}"]
                 },
-                "description": "Update grievance details (only allowed before admin processing)"
+                "description": "Update grievance details"
               }
             },
             {
-              "name": "5. Get Grievance History",
+              "name": "5. Search Grievance by Issue ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/grievances/search/ISSUE001",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances", "search", "ISSUE001"]
+                },
+                "description": "Search for grievance by issue ID"
+              }
+            },
+            {
+              "name": "6. Get Grievances by Roll Number",
               "request": {
                 "method": "GET",
                 "header": [
@@ -404,11 +441,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}/history",
+                  "raw": "{{baseUrl}}/grievances/by-rollno/{{studentId}}",
                   "host": ["{{baseUrl}}"],
-                  "path": ["grievances", "{{grievanceId}}", "history"]
+                  "path": ["grievances", "by-rollno", "{{studentId}}"]
                 },
-                "description": "Get complete history and tracking information for grievance"
+                "description": "Get grievances by student roll number (requires authentication)"
               }
             }
           ]
@@ -427,127 +464,15 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/grievances?status=pending&priority=all&campus=all&department=all&limit=20&offset=0&sortBy=SubmissionDate&sortOrder=desc",
+                  "raw": "{{baseUrl}}/grievances",
                   "host": ["{{baseUrl}}"],
-                  "path": ["grievances"],
-                  "query": [
-                    {
-                      "key": "status",
-                      "value": "pending"
-                    },
-                    {
-                      "key": "priority",
-                      "value": "all"
-                    },
-                    {
-                      "key": "campus",
-                      "value": "all"
-                    },
-                    {
-                      "key": "department",
-                      "value": "all"
-                    },
-                    {
-                      "key": "limit",
-                      "value": "20"
-                    },
-                    {
-                      "key": "offset",
-                      "value": "0"
-                    },
-                    {
-                      "key": "sortBy",
-                      "value": "SubmissionDate"
-                    },
-                    {
-                      "key": "sortOrder",
-                      "value": "desc"
-                    }
-                  ]
+                  "path": ["grievances"]
                 },
-                "description": "Get all grievances with advanced filtering and sorting (Admin only)"
+                "description": "Get all grievances (Admin only - requires authentication)"
               }
             },
             {
-              "name": "2. Assign Grievance to Admin",
-              "request": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{adminToken}}"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"AssignedTo\": \"admin@dseu.ac.in\",\n  \"Status\": \"In Progress\",\n  \"AdminNotes\": \"Assigning to subject expert for detailed review\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}/assign",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["grievances", "{{grievanceId}}", "assign"]
-                },
-                "description": "Assign grievance to specific admin for processing"
-              }
-            },
-            {
-              "name": "3. Update Grievance Status",
-              "request": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{adminToken}}"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"Status\": \"Under Review\",\n  \"ResponseText\": \"Your grievance is being reviewed by the academic department. We will contact you within 3-5 working days with updates.\",\n  \"Priority\": \"High\",\n  \"AdminNotes\": \"Escalated to department head for immediate attention\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}/status",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["grievances", "{{grievanceId}}", "status"]
-                },
-                "description": "Update grievance status with admin response"
-              }
-            },
-            {
-              "name": "4. Resolve Grievance",
-              "request": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{adminToken}}"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"Status\": \"Resolved\",\n  \"ResponseText\": \"Your grade discrepancy has been reviewed and corrected. The updated grade is now reflected in your academic record. Please check your student portal for the updated information.\",\n  \"ResolutionSummary\": \"Grade corrected from B to A+ after verification of exam papers and coursework\",\n  \"AdminNotes\": \"Issue resolved successfully. Student notified via email.\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}/resolve",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["grievances", "{{grievanceId}}", "resolve"]
-                },
-                "description": "Mark grievance as resolved with final response"
-              }
-            },
-            {
-              "name": "5. Get Grievance Analytics",
+              "name": "2. Get Grievances by Roll Number (Admin)",
               "request": {
                 "method": "GET",
                 "header": [
@@ -557,25 +482,55 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/grievances/analytics?startDate=2025-08-01&endDate=2025-08-31&groupBy=status",
+                  "raw": "{{baseUrl}}/grievances/by-rollno/{{studentId}}",
                   "host": ["{{baseUrl}}"],
-                  "path": ["grievances", "analytics"],
-                  "query": [
-                    {
-                      "key": "startDate",
-                      "value": "2025-08-01"
-                    },
-                    {
-                      "key": "endDate",
-                      "value": "2025-08-31"
-                    },
-                    {
-                      "key": "groupBy",
-                      "value": "status"
-                    }
-                  ]
+                  "path": ["grievances", "by-rollno", "{{studentId}}"]
                 },
-                "description": "Get grievance analytics and statistics for reporting"
+                "description": "Get grievances by student roll number (Admin access)"
+              }
+            },
+            {
+              "name": "3. Update Grievance Status (Admin)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"Under Review\",\n  \"adminNotes\": \"Grievance is being reviewed by the academic department. We will contact you within 3-5 working days with updates.\",\n  \"priority\": \"High\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances", "{{grievanceId}}"]
+                },
+                "description": "Update grievance status with admin access"
+              }
+            },
+            {
+              "name": "4. Get Specific Grievance (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/grievances/{{grievanceId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["grievances", "{{grievanceId}}"]
+                },
+                "description": "Get detailed information for a specific grievance (Admin access)"
               }
             }
           ]
@@ -587,7 +542,7 @@
       "description": "Test error handling and validation",
       "item": [
         {
-          "name": "1. Invalid Login Credentials",
+          "name": "1. Invalid Admin Login Credentials",
           "request": {
             "method": "POST",
             "header": [
@@ -598,12 +553,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"Email\": \"invalid@test.com\",\n  \"Password\": \"wrongpassword\"\n}"
+              "raw": "{\n  \"email\": \"invalid@test.com\",\n  \"password\": \"wrongpassword\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/admin/login",
+              "raw": "{{baseUrl}}/admin/auth/login",
               "host": ["{{baseUrl}}"],
-              "path": ["admin", "login"]
+              "path": ["admin", "auth", "login"]
             }
           },
           "event": [
@@ -621,7 +576,41 @@
           ]
         },
         {
-          "name": "2. Unauthorized Grievance Access",
+          "name": "2. Invalid Student Login Credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rollNumber\": \"INVALID123\",\n  \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Should return 401 for invalid student credentials', function () {",
+                  "    pm.expect(pm.response.code).to.equal(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Unauthorized Grievance Access",
           "request": {
             "method": "GET",
             "header": [],
@@ -646,7 +635,7 @@
           ]
         },
         {
-          "name": "3. Invalid Grievance Data",
+          "name": "4. Invalid Grievance Data",
           "request": {
             "method": "POST",
             "header": [
@@ -661,7 +650,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"Title\": \"AB\",\n  \"Description\": \"\",\n  \"Priority\": \"InvalidPriority\"\n}"
+              "raw": "{\n  \"title\": \"AB\",\n  \"description\": \"\",\n  \"priority\": \"InvalidPriority\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/grievances",
@@ -677,6 +666,31 @@
                 "exec": [
                   "pm.test('Should return 400 for invalid data', function () {",
                   "    pm.expect(pm.response.code).to.equal(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5. Non-existent Roll Number Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/auth/rollNumber-exist/NONEXISTENT999",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "auth", "rollNumber-exist", "NONEXISTENT999"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Should return 404 for non-existent roll number', function () {",
+                  "    pm.expect(pm.response.code).to.equal(404);",
                   "});"
                 ]
               }

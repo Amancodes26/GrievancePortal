@@ -60,7 +60,7 @@ export const verifyJWT = async (req: Request, res: Response, next: NextFunction)
       });
       return;
     }    // Find the user associated with the token
-    const user = await DatabaseService.getPersonalInfoByRollNo(decoded.rollNumber);
+    const user = await DatabaseService.getStudentInfoByRollNo(decoded.rollNumber);
     
     if (!user) {
       res.status(403).json({
