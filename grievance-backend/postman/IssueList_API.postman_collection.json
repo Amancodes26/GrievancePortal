@@ -1,0 +1,1007 @@
+{
+  "info": {
+    "name": "DSEU Grievance Portal - IssueList API",
+    "description": "Comprehensive testing collection for IssueList Management API\n\n**Features:**\n- Issue category management\n- CRUD operations with validation\n- Role-based access control\n- Search and filtering\n- Status management\n\n**Authentication:** Optional for GET requests, Admin JWT required for modifications\n**Base URL:** {{baseUrl}}/api/v1/issues\n\n**Environment Variables Required:**\n- baseUrl: http://localhost:5000\n- adminToken: Bearer token for admin authentication\n- userToken: Bearer token for user authentication (optional)\n- issueCode: Valid issue code for testing (e.g., ACAD001)\n- testIssueCode: New issue code for creation tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "issuelist-api-v1",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Authentication Setup",
+      "item": [
+        {
+          "name": "Set Environment Variables",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Setup environment variables for IssueList tests",
+                  "pm.globals.set('adminToken', 'Bearer your_admin_token_here');",
+                  "pm.globals.set('userToken', 'Bearer your_user_token_here');",
+                  "pm.globals.set('baseUrl', 'http://localhost:5000');",
+                  "pm.globals.set('issueCode', 'ACAD001'); // Replace with existing issue code",
+                  "pm.globals.set('testIssueCode', 'TEST001'); // For creation tests",
+                  "pm.globals.set('adminId', 'ADMIN123'); // Replace with valid admin ID",
+                  "",
+                  "console.log('IssueList API environment variables set successfully');",
+                  "pm.test('Environment setup complete', () => {",
+                  "    pm.expect(pm.globals.get('adminToken')).to.not.be.undefined;",
+                  "    pm.expect(pm.globals.get('baseUrl')).to.not.be.undefined;",
+                  "    pm.expect(pm.globals.get('issueCode')).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "setup"]
+            },
+            "description": "Setup request to initialize environment variables for IssueList tests"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Issue Retrieval Operations",
+      "item": [
+        {
+          "name": "Get All Issues (Public - Active Only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has issues data', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('issues');",
+                  "    pm.expect(response.data).to.have.property('pagination');",
+                  "    pm.expect(response.data).to.have.property('filters');",
+                  "    pm.expect(response.data.issues).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('All returned issues are active', () => {",
+                  "    const response = pm.response.json();",
+                  "    const issues = response.data.issues;",
+                  "    ",
+                  "    issues.forEach(issue => {",
+                  "        pm.expect(issue).to.have.property('IsActive', true);",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('Each issue has required fields', () => {",
+                  "    const response = pm.response.json();",
+                  "    const issues = response.data.issues;",
+                  "    ",
+                  "    if (issues.length > 0) {",
+                  "        const issue = issues[0];",
+                  "        pm.expect(issue).to.have.property('IssueCode');",
+                  "        pm.expect(issue).to.have.property('IssueTitle');",
+                  "        pm.expect(issue).to.have.property('Category');",
+                  "        pm.expect(issue).to.have.property('IssueLevel');",
+                  "        pm.expect(issue).to.have.property('RequiredAttachments');",
+                  "        pm.expect(issue).to.have.property('IsActive');",
+                  "        pm.expect(issue).to.have.property('CreatedAt');",
+                  "        ",
+                  "        // Store first issue code for other tests",
+                  "        pm.globals.set('retrievedIssueCode', issue.IssueCode);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Pagination structure is correct', () => {",
+                  "    const response = pm.response.json();",
+                  "    const pagination = response.data.pagination;",
+                  "    pm.expect(pagination).to.have.property('currentPage');",
+                  "    pm.expect(pagination).to.have.property('totalPages');",
+                  "    pm.expect(pagination).to.have.property('totalItems');",
+                  "    pm.expect(pagination).to.have.property('itemsPerPage');",
+                  "    pm.expect(pagination).to.have.property('hasNext');",
+                  "    pm.expect(pagination).to.have.property('hasPrevious');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues?limit=10&offset=0&sortBy=CreatedAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of issues to return (default: 10)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of issues to skip (default: 0)"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "CreatedAt",
+                  "description": "Sort field (CreatedAt, IssueTitle, Category)"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "description": "Sort direction (asc, desc)"
+                }
+              ]
+            },
+            "description": "Get all active issues for students/public users\n\n**Public Access:** No authentication required\n**Filtering:** Only active issues are returned\n**Features:**\n- Pagination support\n- Sorting options\n- Category filtering\n- Search functionality"
+          }
+        },
+        {
+          "name": "Get All Issues (Admin - All Issues)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Admin gets all issues including inactive', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response.data).to.have.property('issues');",
+                  "    pm.expect(response.data).to.have.property('adminFilters');",
+                  "    ",
+                  "    // Should include admin-only filters",
+                  "    pm.expect(response.data.adminFilters).to.have.property('includeInactive', true);",
+                  "});",
+                  "",
+                  "pm.test('Response includes admin metadata', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('statistics');",
+                  "    pm.expect(response.data.statistics).to.have.property('totalActive');",
+                  "    pm.expect(response.data.statistics).to.have.property('totalInactive');",
+                  "    pm.expect(response.data.statistics).to.have.property('totalIssues');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues?active=all&limit=20&sortBy=CreatedAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "all",
+                  "description": "Admin filter: all, true, false"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "CreatedAt",
+                  "description": "Sort field"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "description": "Sort direction"
+                }
+              ]
+            },
+            "description": "Get all issues with admin access\n\n**Admin Features:**\n- View inactive issues\n- Advanced filtering options\n- Issue statistics\n- Management metadata"
+          }
+        },
+        {
+          "name": "Get Issues with Category Filter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All issues match category filter', () => {",
+                  "    const response = pm.response.json();",
+                  "    const issues = response.data.issues;",
+                  "    const filterCategory = 'Academic';",
+                  "    ",
+                  "    issues.forEach(issue => {",
+                  "        pm.expect(issue.Category).to.equal(filterCategory);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues?category=Academic&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Academic",
+                  "description": "Filter by category"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Results limit"
+                }
+              ]
+            },
+            "description": "Filter issues by category"
+          }
+        },
+        {
+          "name": "Get Issues with Level Filter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All issues match level filter', () => {",
+                  "    const response = pm.response.json();",
+                  "    const issues = response.data.issues;",
+                  "    const filterLevel = 'High';",
+                  "    ",
+                  "    issues.forEach(issue => {",
+                  "        pm.expect(issue.IssueLevel).to.equal(filterLevel);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues?level=High&limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"],
+              "query": [
+                {
+                  "key": "level",
+                  "value": "High",
+                  "description": "Filter by issue level (Low, Medium, High, Critical)"
+                },
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "Results limit"
+                }
+              ]
+            },
+            "description": "Filter issues by severity level"
+          }
+        },
+        {
+          "name": "Search Issues by Title/Description",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Search results contain search term', () => {",
+                  "    const response = pm.response.json();",
+                  "    const issues = response.data.issues;",
+                  "    const searchTerm = 'grade';",
+                  "    ",
+                  "    issues.forEach(issue => {",
+                  "        const titleMatch = issue.IssueTitle.toLowerCase().includes(searchTerm);",
+                  "        const descriptionMatch = issue.IssueDescription ? ",
+                  "            issue.IssueDescription.toLowerCase().includes(searchTerm) : false;",
+                  "        ",
+                  "        pm.expect(titleMatch || descriptionMatch).to.be.true;",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues?search=grade&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "grade",
+                  "description": "Search term for title/description"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Results limit"
+                }
+              ]
+            },
+            "description": "Search issues by title or description content"
+          }
+        },
+        {
+          "name": "Get Specific Issue by Code (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has issue data', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('IssueCode');",
+                  "    pm.expect(response.data).to.have.property('IssueTitle');",
+                  "    pm.expect(response.data).to.have.property('Category');",
+                  "    pm.expect(response.data).to.have.property('IssueLevel');",
+                  "    pm.expect(response.data).to.have.property('RequiredAttachments');",
+                  "});",
+                  "",
+                  "pm.test('Issue code matches requested code', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.IssueCode).to.equal(pm.globals.get('issueCode'));",
+                  "});",
+                  "",
+                  "pm.test('Issue is active (public access)', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.IsActive).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Required attachments structure is valid', () => {",
+                  "    const response = pm.response.json();",
+                  "    const attachments = response.data.RequiredAttachments;",
+                  "    ",
+                  "    pm.expect(attachments).to.be.an('array');",
+                  "    if (attachments.length > 0) {",
+                  "        const attachment = attachments[0];",
+                  "        pm.expect(attachment).to.have.property('type');",
+                  "        pm.expect(attachment).to.have.property('name');",
+                  "        pm.expect(attachment).to.have.property('required');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/{{issueCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "{{issueCode}}"]
+            },
+            "description": "Get a specific issue by IssueCode\n\n**Public Access:** No authentication required\n**Constraint:** Only active issues are accessible to public\n**Use Case:** Students viewing available grievance categories"
+          }
+        },
+        {
+          "name": "Get Specific Issue by Code (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Admin gets additional metadata', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('CreatedBy');",
+                  "    pm.expect(response.data).to.have.property('UpdatedBy');",
+                  "    pm.expect(response.data).to.have.property('CreatedAt');",
+                  "    pm.expect(response.data).to.have.property('UpdatedAt');",
+                  "});",
+                  "",
+                  "pm.test('Admin can see inactive issues', () => {",
+                  "    const response = pm.response.json();",
+                  "    // This test would pass even for inactive issues with admin access",
+                  "    pm.expect(response.data).to.have.property('IsActive');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/{{issueCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "{{issueCode}}"]
+            },
+            "description": "Get a specific issue with admin access\n\n**Admin Features:**\n- Access to inactive issues\n- Additional metadata (CreatedBy, UpdatedBy, etc.)\n- Audit information\n- Management context"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Issue Management Operations (Admin Only)",
+      "item": [
+        {
+          "name": "Create New Issue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Issue created successfully', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('IssueCode');",
+                  "    pm.expect(response.data).to.have.property('IssueTitle');",
+                  "    pm.expect(response.data).to.have.property('Category');",
+                  "    pm.expect(response.data).to.have.property('IssueLevel');",
+                  "    pm.expect(response.data).to.have.property('IsActive', true);",
+                  "});",
+                  "",
+                  "pm.test('Created issue matches input data', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.IssueCode).to.equal(pm.globals.get('testIssueCode'));",
+                  "    pm.expect(response.data.IssueTitle).to.equal('Test Issue for API Testing');",
+                  "    pm.expect(response.data.Category).to.equal('Testing');",
+                  "    pm.expect(response.data.IssueLevel).to.equal('Low');",
+                  "});",
+                  "",
+                  "pm.test('Audit fields are populated', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('CreatedBy');",
+                  "    pm.expect(response.data).to.have.property('CreatedAt');",
+                  "    pm.expect(response.data).to.have.property('UpdatedBy');",
+                  "    pm.expect(response.data).to.have.property('UpdatedAt');",
+                  "});",
+                  "",
+                  "pm.test('Required attachments structure is valid', () => {",
+                  "    const response = pm.response.json();",
+                  "    const attachments = response.data.RequiredAttachments;",
+                  "    pm.expect(attachments).to.be.an('array');",
+                  "    pm.expect(attachments).to.have.lengthOf(2);",
+                  "    ",
+                  "    const docAttachment = attachments.find(a => a.type === 'document');",
+                  "    pm.expect(docAttachment).to.not.be.undefined;",
+                  "    pm.expect(docAttachment.required).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IssueCode\": \"{{testIssueCode}}\",\n  \"IssueTitle\": \"Test Issue for API Testing\",\n  \"IssueDescription\": \"This is a test issue created for API testing purposes. It demonstrates the complete issue creation workflow with proper validation and data structure.\",\n  \"Category\": \"Testing\",\n  \"IssueLevel\": \"Low\",\n  \"RequiredAttachments\": [\n    {\n      \"type\": \"document\",\n      \"name\": \"Supporting Document\",\n      \"description\": \"Any document that supports your test case\",\n      \"required\": true,\n      \"allowedFormats\": [\"pdf\", \"doc\", \"docx\"]\n    },\n    {\n      \"type\": \"image\",\n      \"name\": \"Screenshot\",\n      \"description\": \"Screenshot of the issue (if applicable)\",\n      \"required\": false,\n      \"allowedFormats\": [\"jpg\", \"jpeg\", \"png\"]\n    }\n  ],\n  \"IsActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"]
+            },
+            "description": "Create a new issue type\n\n**Admin Only:** Requires admin authentication\n**Validation:**\n- IssueCode: 3-20 uppercase alphanumeric characters (unique)\n- IssueTitle: 3-100 characters\n- IssueDescription: Optional, max 500 characters\n- Category: Max 50 characters\n- IssueLevel: Low, Medium, High, Critical\n- RequiredAttachments: Array, max 10 items"
+          }
+        },
+        {
+          "name": "Update Existing Issue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Issue updated successfully', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('IssueCode');",
+                  "});",
+                  "",
+                  "pm.test('Updated fields reflect new values', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.IssueTitle).to.equal('Updated Test Issue for API Testing');",
+                  "    pm.expect(response.data.IssueLevel).to.equal('Medium');",
+                  "    pm.expect(response.data.IssueDescription).to.include('UPDATED');",
+                  "});",
+                  "",
+                  "pm.test('Audit fields are updated', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('UpdatedBy');",
+                  "    pm.expect(response.data).to.have.property('UpdatedAt');",
+                  "    ",
+                  "    // UpdatedAt should be different from CreatedAt",
+                  "    pm.expect(response.data.UpdatedAt).to.not.equal(response.data.CreatedAt);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IssueTitle\": \"Updated Test Issue for API Testing\",\n  \"IssueDescription\": \"UPDATED: This is a test issue that has been modified for API testing purposes. It demonstrates the complete issue update workflow with proper validation.\",\n  \"Category\": \"Testing\",\n  \"IssueLevel\": \"Medium\",\n  \"RequiredAttachments\": [\n    {\n      \"type\": \"document\",\n      \"name\": \"Updated Supporting Document\",\n      \"description\": \"Updated document requirement\",\n      \"required\": true,\n      \"allowedFormats\": [\"pdf\", \"doc\", \"docx\", \"txt\"]\n    },\n    {\n      \"type\": \"image\",\n      \"name\": \"Screenshot\",\n      \"description\": \"Screenshot of the issue (if applicable)\",\n      \"required\": false,\n      \"allowedFormats\": [\"jpg\", \"jpeg\", \"png\", \"gif\"]\n    },\n    {\n      \"type\": \"video\",\n      \"name\": \"Demo Video\",\n      \"description\": \"Optional video demonstration\",\n      \"required\": false,\n      \"allowedFormats\": [\"mp4\", \"avi\"]\n    }\n  ],\n  \"IsActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/{{testIssueCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "{{testIssueCode}}"]
+            },
+            "description": "Update an existing issue type\n\n**Admin Only:** Requires admin authentication\n**Features:**\n- Partial updates supported\n- Audit trail maintenance\n- Validation enforcement\n- Attachment requirements modification"
+          }
+        },
+        {
+          "name": "Toggle Issue Status (Disable)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status toggled successfully', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('message');",
+                  "    pm.expect(response.message).to.include('status updated');",
+                  "});",
+                  "",
+                  "pm.test('Issue status is now inactive', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('IsActive', false);",
+                  "    pm.expect(response.data).to.have.property('IssueCode');",
+                  "});",
+                  "",
+                  "pm.test('Audit information is updated', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('UpdatedBy');",
+                  "    pm.expect(response.data).to.have.property('UpdatedAt');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/{{testIssueCode}}/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "{{testIssueCode}}", "toggle"]
+            },
+            "description": "Toggle issue active/inactive status\n\n**Admin Only:** Requires admin authentication\n**Features:**\n- Soft disable/enable\n- Audit trail preservation\n- Automatic status switching\n- Impact on public visibility"
+          }
+        },
+        {
+          "name": "Toggle Issue Status (Re-enable)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Issue status is now active again', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response.data).to.have.property('IsActive', true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/{{testIssueCode}}/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "{{testIssueCode}}", "toggle"]
+            },
+            "description": "Re-enable the previously disabled issue"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Handling Tests",
+      "item": [
+        {
+          "name": "Create Issue Without Authentication",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Authentication error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('authentication');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IssueCode\": \"UNAUTH\",\n  \"IssueTitle\": \"Unauthorized Test\",\n  \"Category\": \"Test\",\n  \"IssueLevel\": \"Low\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"]
+            },
+            "description": "Test authentication requirement for issue creation"
+          }
+        },
+        {
+          "name": "Create Issue with Invalid Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Validation error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('validation');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IssueCode\": \"ab\",\n  \"IssueTitle\": \"x\",\n  \"Category\": \"\",\n  \"IssueLevel\": \"InvalidLevel\",\n  \"RequiredAttachments\": \"not_an_array\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"]
+            },
+            "description": "Test validation with invalid issue data"
+          }
+        },
+        {
+          "name": "Create Duplicate Issue Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 409', () => {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test('Duplicate code error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('exists');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IssueCode\": \"{{testIssueCode}}\",\n  \"IssueTitle\": \"Duplicate Test Issue\",\n  \"Category\": \"Testing\",\n  \"IssueLevel\": \"Low\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"]
+            },
+            "description": "Test duplicate IssueCode handling"
+          }
+        },
+        {
+          "name": "Get Non-existent Issue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Not found error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/NONEXIST",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "NONEXIST"]
+            },
+            "description": "Test handling of non-existent issue code"
+          }
+        },
+        {
+          "name": "Update Non-existent Issue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Not found error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IssueTitle\": \"Updated Non-existent Issue\",\n  \"Category\": \"Test\",\n  \"IssueLevel\": \"Low\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/NONEXIST",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "NONEXIST"]
+            },
+            "description": "Test updating non-existent issue"
+          }
+        },
+        {
+          "name": "Get Inactive Issue (Public Access)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Issue not accessible to public when inactive', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/INACTIVE_ISSUE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "INACTIVE_ISSUE"]
+            },
+            "description": "Test public access to inactive issue (should be denied)"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "Bearer your_admin_token_here",
+      "type": "string"
+    },
+    {
+      "key": "userToken",
+      "value": "Bearer your_user_token_here",
+      "type": "string"
+    },
+    {
+      "key": "issueCode",
+      "value": "ACAD001",
+      "type": "string"
+    },
+    {
+      "key": "testIssueCode",
+      "value": "TEST001",
+      "type": "string"
+    },
+    {
+      "key": "adminId",
+      "value": "ADMIN123",
+      "type": "string"
+    }
+  ]
+}

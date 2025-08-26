@@ -1,0 +1,697 @@
+{
+  "info": {
+    "name": "DSEU Grievance Portal - Attachment API",
+    "description": "Comprehensive testing collection for Attachment Management API\n\n**Features:**\n- File upload with validation\n- Secure file download\n- Bulk upload operations\n- Attachment statistics\n- Soft/hard deletion\n\n**Authentication:** Admin JWT Token required\n**Base URL:** {{baseUrl}}/api/v1/attachments\n\n**Environment Variables Required:**\n- baseUrl: http://localhost:5000\n- adminToken: Bearer token for admin authentication\n- grievanceId: Valid grievance ID for testing\n- attachmentId: Valid attachment ID for testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "attachment-api-v1",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Authentication Setup",
+      "item": [
+        {
+          "name": "Set Admin Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// This is a placeholder request to set your admin token",
+                  "// Replace 'your_admin_token_here' with actual admin JWT token",
+                  "pm.globals.set('adminToken', 'Bearer your_admin_token_here');",
+                  "pm.globals.set('baseUrl', 'http://localhost:5000');",
+                  "pm.globals.set('grievanceId', 'GRV-2024-000001'); // Replace with valid grievance ID",
+                  "pm.globals.set('attachmentId', '1'); // Replace with valid attachment ID",
+                  "",
+                  "console.log('Environment variables set successfully');",
+                  "pm.test('Environment setup complete', () => {",
+                  "    pm.expect(pm.globals.get('adminToken')).to.not.be.undefined;",
+                  "    pm.expect(pm.globals.get('baseUrl')).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/attachments/setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "attachments", "setup"]
+            },
+            "description": "Setup request to initialize environment variables"
+          }
+        }
+      ]
+    },
+    {
+      "name": "File Upload Operations",
+      "item": [
+        {
+          "name": "Upload Single File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has attachment data', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('id');",
+                  "    pm.expect(response.data).to.have.property('fileName');",
+                  "    pm.expect(response.data).to.have.property('filePath');",
+                  "    pm.expect(response.data).to.have.property('mimeType');",
+                  "    pm.expect(response.data).to.have.property('fileSize');",
+                  "    ",
+                  "    // Store attachment ID for other tests",
+                  "    if (response.data.id) {",
+                  "        pm.globals.set('uploadedAttachmentId', response.data.id);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('File metadata is valid', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.fileSize).to.be.a('number');",
+                  "    pm.expect(response.data.fileSize).to.be.above(0);",
+                  "    pm.expect(response.data.mimeType).to.be.a('string');",
+                  "    pm.expect(response.data.fileName).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "grievanceId",
+                  "value": "{{grievanceId}}",
+                  "type": "text",
+                  "description": "Grievance ID to attach file to"
+                },
+                {
+                  "key": "uploadedBy",
+                  "value": "ADMIN123",
+                  "type": "text",
+                  "description": "Admin ID performing the upload"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "File to upload (PDF, DOC, DOCX, JPG, PNG, etc.)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/attachments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "attachments"]
+            },
+            "description": "Upload a single file attachment for a grievance\n\n**Security Features:**\n- File type validation\n- File size limits (10MB max)\n- MIME type verification\n- Filename sanitization\n\n**Required Fields:**\n- grievanceId: Valid grievance ID\n- uploadedBy: Admin ID\n- file: File to upload"
+          }
+        },
+        {
+          "name": "Bulk Upload Files",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 or 207', () => {",
+                  "    pm.expect([200, 207]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "pm.test('Response has bulk upload results', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success');",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('successful');",
+                  "    pm.expect(response.data).to.have.property('failed');",
+                  "    pm.expect(response.data).to.have.property('summary');",
+                  "});",
+                  "",
+                  "pm.test('Summary contains upload statistics', () => {",
+                  "    const response = pm.response.json();",
+                  "    const summary = response.data.summary;",
+                  "    pm.expect(summary).to.have.property('totalFiles');",
+                  "    pm.expect(summary).to.have.property('successfulUploads');",
+                  "    pm.expect(summary).to.have.property('failedUploads');",
+                  "    pm.expect(summary).to.have.property('totalSize');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "grievanceId",
+                  "value": "{{grievanceId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "uploadedBy",
+                  "value": "ADMIN123",
+                  "type": "text"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/attachments/bulk",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "attachments", "bulk"]
+            },
+            "description": "Upload multiple files in a single request (max 10 files)\n\n**Features:**\n- Batch processing with individual success/failure tracking\n- Atomic operations per file\n- Comprehensive upload summary\n- Partial success handling"
+          }
+        }
+      ]
+    },
+    {
+      "name": "File Retrieval Operations",
+      "item": [
+        {
+          "name": "Get Attachment List",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has paginated data', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('attachments');",
+                  "    pm.expect(response.data).to.have.property('pagination');",
+                  "    pm.expect(response.data).to.have.property('summary');",
+                  "});",
+                  "",
+                  "pm.test('Pagination structure is correct', () => {",
+                  "    const response = pm.response.json();",
+                  "    const pagination = response.data.pagination;",
+                  "    pm.expect(pagination).to.have.property('currentPage');",
+                  "    pm.expect(pagination).to.have.property('totalPages');",
+                  "    pm.expect(pagination).to.have.property('totalItems');",
+                  "    pm.expect(pagination).to.have.property('itemsPerPage');",
+                  "});",
+                  "",
+                  "pm.test('Each attachment has required fields', () => {",
+                  "    const response = pm.response.json();",
+                  "    const attachments = response.data.attachments;",
+                  "    ",
+                  "    if (attachments.length > 0) {",
+                  "        const attachment = attachments[0];",
+                  "        pm.expect(attachment).to.have.property('id');",
+                  "        pm.expect(attachment).to.have.property('fileName');",
+                  "        pm.expect(attachment).to.have.property('fileSize');",
+                  "        pm.expect(attachment).to.have.property('mimeType');",
+                  "        pm.expect(attachment).to.have.property('uploadedAt');",
+                  "        pm.expect(attachment).to.have.property('uploadedBy');",
+                  "        ",
+                  "        // Store first attachment ID for download test",
+                  "        pm.globals.set('testAttachmentId', attachment.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/attachments/{{grievanceId}}?page=1&limit=10&sortBy=uploaded_at&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "attachments", "{{grievanceId}}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (default: 10, max: 100)"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "uploaded_at",
+                  "description": "Sort field: uploaded_at|file_name|file_size|mime_type"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "description": "Sort direction: asc|desc"
+                }
+              ]
+            },
+            "description": "Get paginated list of attachments for a grievance\n\n**Features:**\n- Pagination support\n- Multiple sorting options\n- File type distribution\n- Upload statistics\n- Uploader information"
+          }
+        },
+        {
+          "name": "Get Attachment Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has statistics data', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('totalFiles');",
+                  "    pm.expect(response.data).to.have.property('totalSize');",
+                  "    pm.expect(response.data).to.have.property('fileTypes');",
+                  "    pm.expect(response.data).to.have.property('uploaders');",
+                  "    pm.expect(response.data).to.have.property('recentActivity');",
+                  "});",
+                  "",
+                  "pm.test('Statistics are valid numbers', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.totalFiles).to.be.a('number');",
+                  "    pm.expect(response.data.totalFiles).to.be.at.least(0);",
+                  "    pm.expect(response.data.totalSize).to.be.a('number');",
+                  "    pm.expect(response.data.totalSize).to.be.at.least(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/attachments/{{grievanceId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "attachments", "{{grievanceId}}", "stats"]
+            },
+            "description": "Get comprehensive statistics for attachments of a grievance\n\n**Includes:**\n- Total file count and size\n- File type distribution\n- Uploader statistics\n- Recent upload activity\n- Storage usage metrics"
+          }
+        },
+        {
+          "name": "Download Attachment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has file content', () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.not.be.null;",
+                  "    pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment');",
+                  "});",
+                  "",
+                  "pm.test('Security headers are present', () => {",
+                  "    // Check for security headers",
+                  "    const headers = pm.response.headers;",
+                  "    pm.expect(headers.get('X-Download-Audit')).to.not.be.null;",
+                  "});",
+                  "",
+                  "pm.test('File content is not empty', () => {",
+                  "    pm.expect(pm.response.responseSize).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/attachments/download/{{attachmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "attachments", "download", "{{attachmentId}}"]
+            },
+            "description": "Download a specific attachment file\n\n**Security Features:**\n- Access control based on admin role\n- File existence verification\n- Secure file streaming\n- Audit logging of downloads\n- Proper content headers"
+          }
+        }
+      ]
+    },
+    {
+      "name": "File Management Operations",
+      "item": [
+        {
+          "name": "Soft Delete Attachment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Soft delete response is correct', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('message');",
+                  "    pm.expect(response.message).to.include('soft deleted');",
+                  "});",
+                  "",
+                  "pm.test('Audit information is present', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('deletedAt');",
+                  "    pm.expect(response.data).to.have.property('deletedBy');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/attachments/{{attachmentId}}?hardDelete=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "attachments", "{{attachmentId}}"],
+              "query": [
+                {
+                  "key": "hardDelete",
+                  "value": "false",
+                  "description": "Soft delete (preserves audit trail)"
+                }
+              ]
+            },
+            "description": "Soft delete an attachment (preserves file and audit trail)\n\n**Features:**\n- Audit trail preservation\n- Reversible operation\n- Permission checking\n- Activity logging"
+          }
+        },
+        {
+          "name": "Hard Delete Attachment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Hard delete response is correct', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('message');",
+                  "    pm.expect(response.message).to.include('permanently deleted');",
+                  "});",
+                  "",
+                  "pm.test('File removal confirmation', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('fileRemoved', true);",
+                  "    pm.expect(response.data).to.have.property('recordRemoved', true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/attachments/{{attachmentId}}?hardDelete=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "attachments", "{{attachmentId}}"],
+              "query": [
+                {
+                  "key": "hardDelete",
+                  "value": "true",
+                  "description": "Permanent deletion (removes file and database record)"
+                }
+              ]
+            },
+            "description": "Hard delete an attachment (permanent removal)\n\n**⚠️ WARNING:** This operation is irreversible\n\n**Features:**\n- Permanent file deletion\n- Database record removal\n- Super admin authorization required\n- Comprehensive audit logging"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Handling Tests",
+      "item": [
+        {
+          "name": "Upload Without Authentication",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Authentication error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error).to.include('authentication');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "grievanceId",
+                  "value": "{{grievanceId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "uploadedBy",
+                  "value": "ADMIN123",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/attachments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "attachments"]
+            },
+            "description": "Test authentication requirement"
+          }
+        },
+        {
+          "name": "Upload Invalid File Type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('File type validation error', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('file type');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "grievanceId",
+                  "value": "{{grievanceId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "uploadedBy",
+                  "value": "ADMIN123",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Upload a file with invalid extension (e.g., .exe, .bat)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/attachments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "attachments"]
+            },
+            "description": "Test file type validation"
+          }
+        },
+        {
+          "name": "Download Non-existent Attachment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Not found error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/attachments/download/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "attachments", "download", "99999"]
+            },
+            "description": "Test handling of non-existent attachment"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "Bearer your_admin_token_here",
+      "type": "string"
+    },
+    {
+      "key": "grievanceId",
+      "value": "GRV-2024-000001",
+      "type": "string"
+    },
+    {
+      "key": "attachmentId",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}

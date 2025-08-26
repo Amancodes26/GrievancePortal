@@ -1,0 +1,295 @@
+{
+  "info": {
+    "name": "DSEU Grievance Portal - User Authentication API",
+    "description": "Comprehensive testing collection for User Authentication API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "user-auth-api-v1"
+  },
+  "item": [
+    {
+      "name": "Account Verification",
+      "item": [
+        {
+          "name": "Check Roll Number Exists",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Roll number validation response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('exists');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/auth/rollNumber-exist/{{rollNumber}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "auth", "rollNumber-exist", "{{rollNumber}}"]
+            },
+            "description": "Check if a roll number exists in the system"
+          }
+        },
+        {
+          "name": "Verify Partial Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Email verification response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('verified');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/auth/verify-partial-email/{{rollNumber}}/{{partialEmail}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "auth", "verify-partial-email", "{{rollNumber}}", "{{partialEmail}}"]
+            },
+            "description": "Verify partial email against roll number"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication Operations",
+      "item": [
+        {
+          "name": "User Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Login successful', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('token');",
+                  "});",
+                  "",
+                  "pm.test('JWT token is provided', () => {",
+                  "    const response = pm.response.json();",
+                  "    const token = response.data.token;",
+                  "    pm.expect(token).to.be.a('string');",
+                  "    pm.globals.set('userToken', 'Bearer ' + token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rollNumber\": \"{{rollNumber}}\",\n  \"password\": \"{{testPassword}}\",\n  \"deviceInfo\": {\n    \"deviceType\": \"web\",\n    \"browser\": \"Chrome\",\n    \"os\": \"Windows 10\"\n  },\n  \"rememberMe\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "auth", "login"]
+            },
+            "description": "Authenticate user and generate JWT token"
+          }
+        },
+        {
+          "name": "Login with Incorrect Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Authentication failed', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rollNumber\": \"{{rollNumber}}\",\n  \"password\": \"WrongPassword123!\",\n  \"deviceInfo\": {\n    \"deviceType\": \"web\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "auth", "login"]
+            },
+            "description": "Test login with incorrect password"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Password Management",
+      "item": [
+        {
+          "name": "Set Password (First Time)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Password set successfully', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rollNumber\": \"{{rollNumber}}\",\n  \"partialEmail\": \"{{partialEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"confirmPassword\": \"{{testPassword}}\",\n  \"agreeToTerms\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/auth/set-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "auth", "set-password"]
+            },
+            "description": "Set password for first-time account activation"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Handling Tests",
+      "item": [
+        {
+          "name": "Login Without Required Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Validation error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rollNumber\": \"\",\n  \"password\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "auth", "login"]
+            },
+            "description": "Test login validation with empty required fields"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "rollNumber",
+      "value": "20230101",
+      "type": "string"
+    },
+    {
+      "key": "partialEmail",
+      "value": "student@dseu",
+      "type": "string"
+    },
+    {
+      "key": "testPassword",
+      "value": "TestPassword123!",
+      "type": "string"
+    },
+    {
+      "key": "userToken",
+      "value": "Bearer user_jwt_token_here",
+      "type": "string"
+    }
+  ]
+}

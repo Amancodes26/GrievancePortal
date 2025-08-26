@@ -1,0 +1,1023 @@
+{
+  "info": {
+    "name": "DSEU Grievance Portal - Grievance API",
+    "description": "Comprehensive testing collection for Grievance Management API\n\n**Features:**\n- Grievance CRUD operations\n- Student and Admin workflows\n- Status tracking and updates\n- Search and filtering\n- Response management\n- Redirection functionality\n\n**Authentication:** Student/Admin JWT tokens required based on endpoint\n**Base URL:** {{baseUrl}}/api/v1/grievances\n\n**Environment Variables Required:**\n- baseUrl: http://localhost:5000\n- adminToken: Bearer token for admin authentication\n- userToken: Bearer token for user authentication\n- grievanceId: Valid grievance ID for testing\n- rollNumber: Student roll number\n- issueId: Valid issue/grievance ID",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "grievance-api-v1",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Authentication Setup",
+      "item": [
+        {
+          "name": "Set Environment Variables",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Setup environment variables for Grievance tests",
+                  "pm.globals.set('adminToken', 'Bearer your_admin_token_here');",
+                  "pm.globals.set('userToken', 'Bearer your_user_token_here');",
+                  "pm.globals.set('baseUrl', 'http://localhost:5000');",
+                  "pm.globals.set('grievanceId', 'GRV-2024-000001'); // Replace with existing grievance ID",
+                  "pm.globals.set('rollNumber', '20230101'); // Replace with valid roll number",
+                  "pm.globals.set('issueId', 'GRV-2024-000001'); // For search operations",
+                  "pm.globals.set('adminId', 'ADMIN123'); // Current admin ID",
+                  "pm.globals.set('redirectAdminId', 'ADMIN456'); // Target admin for redirection",
+                  "",
+                  "console.log('Grievance API environment variables set successfully');",
+                  "pm.test('Environment setup complete', () => {",
+                  "    pm.expect(pm.globals.get('adminToken')).to.not.be.undefined;",
+                  "    pm.expect(pm.globals.get('userToken')).to.not.be.undefined;",
+                  "    pm.expect(pm.globals.get('baseUrl')).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "setup"]
+            },
+            "description": "Setup request to initialize environment variables for Grievance tests"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Student Operations",
+      "item": [
+        {
+          "name": "Create New Grievance (Student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Grievance created successfully', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('grievanceId');",
+                  "    pm.expect(response.data).to.have.property('issueCode');",
+                  "    pm.expect(response.data).to.have.property('subject');",
+                  "    pm.expect(response.data).to.have.property('description');",
+                  "    pm.expect(response.data).to.have.property('status');",
+                  "    pm.expect(response.data).to.have.property('createdAt');",
+                  "    ",
+                  "    // Store grievance ID for other tests",
+                  "    if (response.data.grievanceId) {",
+                  "        pm.globals.set('createdGrievanceId', response.data.grievanceId);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Initial status is correct', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.status.toLowerCase()).to.include('submitted');",
+                  "});",
+                  "",
+                  "pm.test('Grievance data matches input', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.subject).to.equal('Grade Discrepancy in Semester Examination');",
+                  "    pm.expect(response.data.issueCode).to.equal('ACAD001');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issueCode\": \"ACAD001\",\n  \"subject\": \"Grade Discrepancy in Semester Examination\",\n  \"description\": \"I believe there is an error in my semester examination results. My expected grade based on internal assessments and exam performance does not match the final grade awarded. I would like this to be reviewed and corrected if necessary.\",\n  \"priority\": \"Medium\",\n  \"category\": \"Academic\",\n  \"attachments\": [\n    {\n      \"fileName\": \"exam_answer_sheet.pdf\",\n      \"fileType\": \"application/pdf\",\n      \"fileSize\": 1024000,\n      \"description\": \"Scanned copy of exam answer sheet\"\n    },\n    {\n      \"fileName\": \"internal_assessment_marks.jpg\",\n      \"fileType\": \"image/jpeg\",\n      \"fileSize\": 512000,\n      \"description\": \"Photo of internal assessment marks card\"\n    }\n  ],\n  \"contactPreference\": \"email\",\n  \"urgency\": \"normal\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances"]
+            },
+            "description": "Create a new grievance as a student\n\n**Student Authentication Required**\n**Auto-populated fields:**\n- Student ID from JWT token\n- Timestamp\n- Initial status\n- Grievance ID generation\n\n**Required Fields:**\n- issueCode: Valid issue code from IssueList\n- subject: Grievance title\n- description: Detailed explanation\n- priority: Low, Medium, High\n- category: Issue category"
+          }
+        },
+        {
+          "name": "Get My Grievances (Student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has student grievances', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('grievances');",
+                  "    pm.expect(response.data).to.have.property('summary');",
+                  "    pm.expect(response.data.grievances).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Each grievance has required fields', () => {",
+                  "    const response = pm.response.json();",
+                  "    const grievances = response.data.grievances;",
+                  "    ",
+                  "    if (grievances.length > 0) {",
+                  "        const grievance = grievances[0];",
+                  "        pm.expect(grievance).to.have.property('grievanceId');",
+                  "        pm.expect(grievance).to.have.property('subject');",
+                  "        pm.expect(grievance).to.have.property('status');",
+                  "        pm.expect(grievance).to.have.property('priority');",
+                  "        pm.expect(grievance).to.have.property('createdAt');",
+                  "        pm.expect(grievance).to.have.property('lastUpdated');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Summary contains statistics', () => {",
+                  "    const response = pm.response.json();",
+                  "    const summary = response.data.summary;",
+                  "    pm.expect(summary).to.have.property('total');",
+                  "    pm.expect(summary).to.have.property('byStatus');",
+                  "    pm.expect(summary).to.have.property('byPriority');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/my-grievances?status=all&page=1&limit=10&sortBy=createdAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "my-grievances"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all",
+                  "description": "Filter by status: all, pending, resolved, etc."
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt",
+                  "description": "Sort field"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "description": "Sort direction"
+                }
+              ]
+            },
+            "description": "Get all grievances submitted by the authenticated student\n\n**Student Authentication Required**\n**Features:**\n- Automatic filtering by student ID\n- Status-based filtering\n- Pagination support\n- Summary statistics\n- Sorting options"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Grievance Search & Retrieval",
+      "item": [
+        {
+          "name": "Get All Grievances (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Admin gets comprehensive grievance list', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('grievances');",
+                  "    pm.expect(response.data).to.have.property('pagination');",
+                  "    pm.expect(response.data).to.have.property('filters');",
+                  "    pm.expect(response.data).to.have.property('statistics');",
+                  "});",
+                  "",
+                  "pm.test('Admin statistics are comprehensive', () => {",
+                  "    const response = pm.response.json();",
+                  "    const stats = response.data.statistics;",
+                  "    pm.expect(stats).to.have.property('totalGrievances');",
+                  "    pm.expect(stats).to.have.property('byStatus');",
+                  "    pm.expect(stats).to.have.property('byPriority');",
+                  "    pm.expect(stats).to.have.property('byCategory');",
+                  "    pm.expect(stats).to.have.property('recentActivity');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances?status=all&priority=all&page=1&limit=20&sortBy=createdAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all",
+                  "description": "Filter by status"
+                },
+                {
+                  "key": "priority",
+                  "value": "all",
+                  "description": "Filter by priority"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt",
+                  "description": "Sort field"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "description": "Sort direction"
+                }
+              ]
+            },
+            "description": "Get all grievances with admin privileges\n\n**Admin Authentication Required**\n**Features:**\n- Access to all student grievances\n- Advanced filtering options\n- Comprehensive statistics\n- Bulk operation support\n- Export capabilities"
+          }
+        },
+        {
+          "name": "Get Grievances by Roll Number",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has student-specific grievances', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response.data).to.have.property('grievances');",
+                  "    pm.expect(response.data).to.have.property('studentInfo');",
+                  "    pm.expect(response.data).to.have.property('summary');",
+                  "});",
+                  "",
+                  "pm.test('Student info is populated', () => {",
+                  "    const response = pm.response.json();",
+                  "    const studentInfo = response.data.studentInfo;",
+                  "    pm.expect(studentInfo).to.have.property('rollNumber');",
+                  "    pm.expect(studentInfo).to.have.property('name');",
+                  "    pm.expect(studentInfo).to.have.property('department');",
+                  "    pm.expect(studentInfo).to.have.property('program');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/by-rollno/{{rollNumber}}?status=all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "by-rollno", "{{rollNumber}}"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all",
+                  "description": "Filter by status"
+                }
+              ]
+            },
+            "description": "Get all grievances for a specific student by roll number\n\n**Authentication Required:** For privacy protection\n**Use Cases:**\n- Admin reviewing student history\n- Student support tracking\n- Pattern analysis\n- Case management"
+          }
+        },
+        {
+          "name": "Search Grievance by Issue ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Specific grievance found', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('grievanceId');",
+                  "    pm.expect(response.data).to.have.property('subject');",
+                  "    pm.expect(response.data).to.have.property('description');",
+                  "    pm.expect(response.data).to.have.property('status');",
+                  "    pm.expect(response.data).to.have.property('timeline');",
+                  "});",
+                  "",
+                  "pm.test('Timeline information is present', () => {",
+                  "    const response = pm.response.json();",
+                  "    const timeline = response.data.timeline;",
+                  "    pm.expect(timeline).to.be.an('array');",
+                  "    ",
+                  "    if (timeline.length > 0) {",
+                  "        const entry = timeline[0];",
+                  "        pm.expect(entry).to.have.property('timestamp');",
+                  "        pm.expect(entry).to.have.property('action');",
+                  "        pm.expect(entry).to.have.property('by');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/search/{{issueId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "search", "{{issueId}}"]
+            },
+            "description": "Search for a specific grievance by issue ID\n\n**Public Access:** No authentication required\n**Use Cases:**\n- Student tracking their grievance\n- Public grievance lookup\n- Status checking\n- Reference sharing"
+          }
+        },
+        {
+          "name": "Get Grievance by Internal ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Detailed grievance information', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response.data).to.have.property('id');",
+                  "    pm.expect(response.data).to.have.property('grievanceId');",
+                  "    pm.expect(response.data).to.have.property('studentInfo');",
+                  "    pm.expect(response.data).to.have.property('attachments');",
+                  "    pm.expect(response.data).to.have.property('responses');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "1"]
+            },
+            "description": "Get grievance by internal database ID\n\n**Admin Authentication Recommended**\n**Use Cases:**\n- Internal system operations\n- Admin panel access\n- Database management\n- System integration"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Response Management",
+      "item": [
+        {
+          "name": "Add Admin Response to Grievance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response added successfully', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('message');",
+                  "    pm.expect(response.message.toLowerCase()).to.include('response');",
+                  "});",
+                  "",
+                  "pm.test('Response data is valid', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('responseId');",
+                  "    pm.expect(response.data).to.have.property('grievanceId');",
+                  "    pm.expect(response.data).to.have.property('responseText');",
+                  "    pm.expect(response.data).to.have.property('responseBy');",
+                  "    pm.expect(response.data).to.have.property('responseAt');",
+                  "    pm.expect(response.data).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responseText\": \"Thank you for submitting your grievance regarding the grade discrepancy. We have initiated a review of your examination papers and internal assessment records. Our academic review committee will examine your case within the next 5-7 working days. We will keep you updated on the progress and findings.\",\n  \"status\": \"under_review\",\n  \"priority\": \"medium\",\n  \"estimatedResolution\": \"7 days\",\n  \"actionTaken\": \"Academic review committee assigned\",\n  \"nextSteps\": \"Paper re-evaluation by subject expert\",\n  \"attachments\": [\n    {\n      \"fileName\": \"review_guidelines.pdf\",\n      \"description\": \"Academic review process guidelines\",\n      \"fileType\": \"application/pdf\"\n    }\n  ],\n  \"notifyStudent\": true,\n  \"internal_notes\": \"High priority case - student has valid concerns based on internal assessment scores\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/{{grievanceId}}/response",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "{{grievanceId}}", "response"]
+            },
+            "description": "Add an admin response to a grievance\n\n**Admin Authentication Required**\n**Features:**\n- Status update capability\n- Student notification trigger\n- Attachment support\n- Timeline tracking\n- Internal notes for admin team"
+          }
+        },
+        {
+          "name": "Update Grievance Status (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status updated successfully', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('message');",
+                  "    pm.expect(response.message.toLowerCase()).to.include('status');",
+                  "});",
+                  "",
+                  "pm.test('Updated status is reflected', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('status', 'resolved');",
+                  "    pm.expect(response.data).to.have.property('updatedBy');",
+                  "    pm.expect(response.data).to.have.property('updatedAt');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"resolved\",\n  \"resolutionSummary\": \"Grade discrepancy has been resolved. After thorough review, we found that there was indeed an error in the initial grade calculation. Your correct grade has been updated in the system and official transcripts will be reissued within 3-5 business days.\",\n  \"actionTaken\": \"Grade corrected and transcripts ordered for reissue\",\n  \"adminNotes\": \"Calculator error in initial assessment - corrected to A+ from B+\",\n  \"studentSatisfaction\": \"pending\",\n  \"followUpRequired\": false,\n  \"notifyStudent\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/{{grievanceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "{{grievanceId}}"]
+            },
+            "description": "Update grievance status and resolution details\n\n**Admin Authentication Required**\n**Status Options:**\n- submitted, under_review, in_progress\n- resolved, rejected, on_hold\n- escalated, closed\n\n**Features:**\n- Resolution summary\n- Action tracking\n- Student notification\n- Follow-up management"
+          }
+        },
+        {
+          "name": "Update Student Status (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Student status updated', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response.data).to.have.property('studentStatus');",
+                  "    pm.expect(response.data).to.have.property('lastUpdated');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentStatus\": \"resolved\",\n  \"studentMessage\": \"Your grievance has been successfully resolved. The corrected grade is now reflected in your academic records.\",\n  \"notificationPreference\": \"email\",\n  \"sendNotification\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/{{grievanceId}}/student-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "{{grievanceId}}", "student-status"]
+            },
+            "description": "Update the status visible to students\n\n**Admin Authentication Required**\n**Features:**\n- Student-facing status updates\n- Custom messaging to student\n- Notification management\n- Status history tracking"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Grievance Redirection",
+      "item": [
+        {
+          "name": "Redirect Grievance to Another Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Grievance redirected successfully', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('message');",
+                  "    pm.expect(response.message.toLowerCase()).to.include('redirected');",
+                  "});",
+                  "",
+                  "pm.test('Redirection data is complete', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('grievanceId');",
+                  "    pm.expect(response.data).to.have.property('redirectedTo');",
+                  "    pm.expect(response.data).to.have.property('redirectedBy');",
+                  "    pm.expect(response.data).to.have.property('redirectReason');",
+                  "    pm.expect(response.data).to.have.property('redirectedAt');",
+                  "    pm.expect(response.data).to.have.property('newStatus');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetAdmin\": \"{{redirectAdminId}}\",\n  \"redirectReason\": \"Specialized Expertise Required\",\n  \"redirectComment\": \"This grievance involves complex academic policy interpretation that falls under the Academic Affairs department's specialized domain. The target admin has extensive experience with grade appeal processes and policy exceptions.\",\n  \"priority\": \"high\",\n  \"urgentTransfer\": false,\n  \"includeAllDocuments\": true,\n  \"studentNotification\": {\n    \"notify\": true,\n    \"message\": \"Your grievance has been transferred to our Academic Affairs specialist who will provide expert assistance with your case.\",\n    \"estimatedResponse\": \"2-3 business days\"\n  },\n  \"internalNotes\": \"Student has valid concerns - requires policy review and potential exception approval\",\n  \"retainAccess\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/{{grievanceId}}/redirect",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "{{grievanceId}}", "redirect"]
+            },
+            "description": "Redirect a grievance to another admin or department\n\n**Admin Authentication Required**\n**Use Cases:**\n- Specialized expertise needed\n- Department-specific issues\n- Workload balancing\n- Escalation to higher authority\n\n**Features:**\n- Comprehensive handover documentation\n- Student notification management\n- Access retention options\n- Priority transfer support"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Statistics & Analytics",
+      "item": [
+        {
+          "name": "Get Grievance Statistics Overview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Comprehensive statistics provided', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response.data).to.have.property('overview');",
+                  "    pm.expect(response.data).to.have.property('byCategory');",
+                  "    pm.expect(response.data).to.have.property('byStatus');",
+                  "    pm.expect(response.data).to.have.property('byPriority');",
+                  "    pm.expect(response.data).to.have.property('trends');",
+                  "    pm.expect(response.data).to.have.property('performance');",
+                  "});",
+                  "",
+                  "pm.test('Overview statistics are valid', () => {",
+                  "    const response = pm.response.json();",
+                  "    const overview = response.data.overview;",
+                  "    pm.expect(overview).to.have.property('totalGrievances');",
+                  "    pm.expect(overview).to.have.property('activeGrievances');",
+                  "    pm.expect(overview).to.have.property('resolvedGrievances');",
+                  "    pm.expect(overview).to.have.property('averageResolutionTime');",
+                  "    pm.expect(overview).to.have.property('resolutionRate');",
+                  "    ",
+                  "    // Ensure numbers are valid",
+                  "    pm.expect(overview.totalGrievances).to.be.a('number');",
+                  "    pm.expect(overview.totalGrievances).to.be.at.least(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/stats/overview?period=30days&includeDetails=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "stats", "overview"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "30days",
+                  "description": "Time period: 7days, 30days, 90days, 1year, all"
+                },
+                {
+                  "key": "includeDetails",
+                  "value": "true",
+                  "description": "Include detailed breakdowns"
+                }
+              ]
+            },
+            "description": "Get comprehensive grievance statistics and analytics\n\n**Admin/User Authentication Required**\n**Features:**\n- System-wide statistics\n- Performance metrics\n- Trend analysis\n- Category breakdowns\n- Resolution tracking\n- Time-based filtering\n\n**Use Cases:**\n- Dashboard reporting\n- Performance monitoring\n- Resource planning\n- Process improvement"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Handling Tests",
+      "item": [
+        {
+          "name": "Create Grievance Without Authentication",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Authentication error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('authentication');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issueCode\": \"ACAD001\",\n  \"subject\": \"Test Without Auth\",\n  \"description\": \"Testing authentication requirement\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances"]
+            },
+            "description": "Test authentication requirement for grievance creation"
+          }
+        },
+        {
+          "name": "Create Grievance with Invalid Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Validation error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('validation');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issueCode\": \"\",\n  \"subject\": \"\",\n  \"description\": \"\",\n  \"priority\": \"InvalidPriority\",\n  \"category\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances"]
+            },
+            "description": "Test validation with invalid grievance data"
+          }
+        },
+        {
+          "name": "Get Non-existent Grievance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Not found error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/search/GRV-2024-999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "search", "GRV-2024-999999"]
+            },
+            "description": "Test handling of non-existent grievance ID"
+          }
+        },
+        {
+          "name": "Add Response Without Admin Auth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401 or 403', () => {",
+                  "    pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "pm.test('Authorization error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responseText\": \"Unauthorized response attempt\",\n  \"status\": \"under_review\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/{{grievanceId}}/response",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "{{grievanceId}}", "response"]
+            },
+            "description": "Test admin-only response functionality with user token"
+          }
+        },
+        {
+          "name": "Redirect to Invalid Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400 or 404', () => {",
+                  "    pm.expect([400, 404]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "pm.test('Invalid admin error response', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error.toLowerCase()).to.include('admin');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetAdmin\": \"INVALID_ADMIN_ID\",\n  \"redirectReason\": \"Test Invalid Admin\",\n  \"redirectComment\": \"Testing invalid admin redirection\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/grievances/{{grievanceId}}/redirect",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "grievances", "{{grievanceId}}", "redirect"]
+            },
+            "description": "Test redirection with invalid admin ID"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "Bearer your_admin_token_here",
+      "type": "string"
+    },
+    {
+      "key": "userToken",
+      "value": "Bearer your_user_token_here",
+      "type": "string"
+    },
+    {
+      "key": "grievanceId",
+      "value": "GRV-2024-000001",
+      "type": "string"
+    },
+    {
+      "key": "rollNumber",
+      "value": "20230101",
+      "type": "string"
+    },
+    {
+      "key": "issueId",
+      "value": "GRV-2024-000001",
+      "type": "string"
+    },
+    {
+      "key": "adminId",
+      "value": "ADMIN123",
+      "type": "string"
+    },
+    {
+      "key": "redirectAdminId",
+      "value": "ADMIN456",
+      "type": "string"
+    }
+  ]
+}
