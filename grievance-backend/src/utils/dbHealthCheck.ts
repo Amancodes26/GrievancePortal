@@ -113,7 +113,7 @@ export class DatabaseHealthCheck {
       'grievances',
       'tracking', 
       'admininfo',
-      'studentinfo',
+      'PersonalInfo',
       'campusinfo',
       'issuelist',
       'programinfo',

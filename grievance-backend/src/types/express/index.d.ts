@@ -1,5 +1,5 @@
 import { StudentUser, AdminUser } from '../user';
-import { StudentInfo } from '../../models/StudentInfo';
+import { PersonalInfo } from '../../models/PersonalInfo';
 import { AdminInfo } from '../../models/AdminInfo';
 import { DatabaseAdminRole, Department } from '../common';
 
@@ -30,10 +30,10 @@ declare global {
       };
 
       // Full user object after authentication
-      authenticatedUser?: StudentInfo | AdminInfo;
+      authenticatedUser?: PersonalInfo | AdminInfo;
       
       // Legacy support
-      User?: StudentInfo;
+      User?: PersonalInfo;
     }
   }
 }

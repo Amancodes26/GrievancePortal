@@ -1,7 +1,12 @@
 import bcrypt from 'bcryptjs';
 import ConnectionManager from '../db/connectionManager';
-import { AdminQueries } from '../db/queries';
+import { AdminQueries, AdminAuditLogQueries, StatsQueries } from '../db/queries';
 import { Department, DatabaseAdminRole } from '../types/common';
+
+/**
+ * DSEU Super Admin Service
+ * Updated for init.sql schema with proper audit logging and department management
+ */
 
 interface CreateAdminInput {
   name: string;
@@ -9,7 +14,7 @@ interface CreateAdminInput {
   phone?: string;
   password: string;
   role: DatabaseAdminRole;
-  department?: string;
+  department: 'ACADEMIC' | 'EXAM' | 'CAMPUS' | 'SYSTEM';
   campusId?: number;
 }
 
@@ -23,13 +28,27 @@ interface AuditLogInput {
   role: DatabaseAdminRole;
 }
 
-// Main campus ID (DSEU Dwarka Campus)
+// Main campus ID (DSEU Dwarka Campus from init.sql)
 const MAIN_CAMPUS_ID = 1016; // DDC - DSEU DWARKA CAMPUS
 
 export class SuperAdminService {
-  // Create a new admin
+  // Create a new admin with proper role-department validation
   static async createAdmin({ name, email, phone, password, role, department, campusId }: CreateAdminInput): Promise<any> {
     try {
+      // Validate role-department combination
+      const isValidCombination = await ConnectionManager.query(`
+        SELECT CASE 
+          WHEN $1 = 'SUPER_ADMIN' AND $2 = 'SYSTEM' THEN true
+          WHEN $1 = 'CAMPUS_ADMIN' AND $2 = 'CAMPUS' THEN true
+          WHEN $1 = 'DEPT_ADMIN' AND $2 IN ('ACADEMIC', 'EXAM') THEN true
+          ELSE false
+        END as is_valid
+      `, [role, department]);
+
+      if (!isValidCombination.rows[0].is_valid) {
+        throw new Error(`Invalid role-department combination: ${role} - ${department}`);
+      }
+
       // Check if email already exists
       const existing = await ConnectionManager.query('SELECT * FROM Admin WHERE Email = $1', [email]);
       if (existing.rows.length > 0) {
@@ -42,12 +61,12 @@ export class SuperAdminService {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 12);
       
-      // Use main campus if no campus specified
-      const finalCampusId = campusId || MAIN_CAMPUS_ID;
+      // Use main campus if no campus specified (except for SUPER_ADMIN)
+      const finalCampusId = role === 'SUPER_ADMIN' ? null : (campusId || MAIN_CAMPUS_ID);
       
-      // Create admin
+      // Create admin with proper department field
       const result = await ConnectionManager.query(AdminQueries.CREATE, [
-        adminId, name, email, phone || null, hashedPassword, role, department || null, false, true, finalCampusId
+        adminId, name, email, phone || null, hashedPassword, role, department, false, true, finalCampusId
       ]);
       
       return result.rows[0];
@@ -100,21 +119,18 @@ export class SuperAdminService {
     return MAIN_CAMPUS_ID;
   }
 
-  // Log admin action
+  // Log admin action using new AdminAuditLogQueries
   static async logAdminAction(data: AuditLogInput): Promise<any> {
     try {
-      const result = await ConnectionManager.query(`
-        INSERT INTO Admin_Audit_Log (AdminId, Action_Type, Email, AccessedResource, IP_Address, Role, Query)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
-      `, [
+      const result = await ConnectionManager.query(AdminAuditLogQueries.CREATE, [
         data.adminId,
         data.actionType,
         data.email,
         data.accessedResource,
         data.ipAddress || 'unknown',
-        data.role,
-        JSON.stringify(data.actionDetails)
+        true, // IsActive
+        JSON.stringify(data.actionDetails), // Query field
+        data.role
       ]);
       
       return result.rows[0];
@@ -125,100 +141,109 @@ export class SuperAdminService {
     }
   }
 
-  // Get admin audit logs
-  static async getAdminAuditLogs(adminId?: string, limit: number = 100, offset: number = 0): Promise<any[]> {
-    let query = `
-      SELECT * FROM Admin_Audit_Log
-      WHERE IsActive = true
-    `;
-    const params: any[] = [];
-    
+  // Get admin audit logs using new queries
+  static async getAdminAuditLogs(adminId?: string, limit: number = 100): Promise<any[]> {
     if (adminId) {
-      query += ' AND AdminId = $1';
-      params.push(adminId);
-      query += ' ORDER BY Timestamp DESC LIMIT $2 OFFSET $3';
-      params.push(limit, offset);
+      const result = await ConnectionManager.query(AdminAuditLogQueries.GET_BY_ADMIN, [adminId]);
+      return result.rows.slice(0, limit);
     } else {
-      query += ' ORDER BY Timestamp DESC LIMIT $1 OFFSET $2';
-      params.push(limit, offset);
+      const result = await ConnectionManager.query(AdminAuditLogQueries.GET_RECENT, [limit]);
+      return result.rows;
     }
-    
-    const result = await ConnectionManager.query(query, params);
-    return result.rows;
   }
 
-  // Get system statistics
+  // Get system statistics using new StatsQueries
   static async getSystemStats(): Promise<any> {
     try {
-      const [adminsResult, grievancesResult, campusResult] = await Promise.all([
-        ConnectionManager.query('SELECT COUNT(*) as total_admins, COUNT(CASE WHEN IsActive = true THEN 1 END) as active_admins FROM Admin'),
-        ConnectionManager.query('SELECT COUNT(*) as total_grievances FROM Grievance'),
-        ConnectionManager.query('SELECT COUNT(*) as total_campuses FROM CampusInfo')
-      ]);
-
-      return {
-        admins: {
-          total: parseInt(adminsResult.rows[0].total_admins),
-          active: parseInt(adminsResult.rows[0].active_admins)
-        },
-        grievances: {
-          total: parseInt(grievancesResult.rows[0].total_grievances)
-        },
-        campuses: {
-          total: parseInt(campusResult.rows[0].total_campuses)
-        }
-      };
+      const result = await ConnectionManager.query(StatsQueries.GET_SYSTEM_STATS);
+      return result.rows[0];
     } catch (error) {
       throw error;
     }
   }
 
-  // Get campus admin statistics  
-  static async getCampusAdminStats(): Promise<any[]> {
+  // Get admin activity statistics
+  static async getAdminActivityStats(): Promise<any[]> {
     try {
-      const result = await ConnectionManager.query(`
-        SELECT 
-          c.CampusId,
-          c.CampusCode,
-          c.CampusName,
-          COUNT(a.AdminId) as admin_count,
-          COUNT(CASE WHEN a.IsActive = true THEN 1 END) as active_admins
-        FROM CampusInfo c
-        LEFT JOIN Admin a ON c.CampusId = a.CampusId
-        GROUP BY c.CampusId, c.CampusCode, c.CampusName
-        ORDER BY c.CampusName
-      `);
-      
+      const result = await ConnectionManager.query(StatsQueries.GET_ADMIN_ACTIVITY_STATS);
       return result.rows;
     } catch (error) {
       throw error;
     }
   }
 
-  // Get department admins by campus
-  static async getDepartmentAdminsByCampus(campusId: number, department: Department): Promise<any[]> {
-    const result = await ConnectionManager.query(`
-      SELECT * FROM Admin 
-      WHERE CampusId = $1 AND Role = $2 AND IsActive = true
-      ORDER BY Name
-    `, [campusId, department]);
-    
+  // Get campus admin statistics using new schema
+  static async getCampusAdminStats(): Promise<any[]> {
+    try {
+      const result = await ConnectionManager.query(StatsQueries.GET_CAMPUS_GRIEVANCE_STATS);
+      return result.rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get department admins by campus with proper department enum
+  static async getDepartmentAdminsByCampus(campusId: number, department: 'ACADEMIC' | 'EXAM' | 'CAMPUS' | 'SYSTEM'): Promise<any[]> {
+    const result = await ConnectionManager.query(AdminQueries.GET_BY_CAMPUS_AND_DEPARTMENT, [campusId, department]);
     return result.rows;
   }
 
   // Get main campus department admins
-  static async getMainCampusDepartmentAdmins(department: Department): Promise<any[]> {
+  static async getMainCampusDepartmentAdmins(department: 'ACADEMIC' | 'EXAM' | 'CAMPUS' | 'SYSTEM'): Promise<any[]> {
     return this.getDepartmentAdminsByCampus(MAIN_CAMPUS_ID, department);
   }
 
-  // Assign admin to campus (simplified version for current schema)
-  static async assignAdminToCampus(data: { adminId: string; campusId: number; department: Department; isPrimary?: boolean }): Promise<any> {
-    // In our current schema, we just update the admin's campus
-    const result = await ConnectionManager.query(`
-      UPDATE Admin SET CampusId = $1 WHERE AdminId = $2
-      RETURNING *
-    `, [data.campusId, data.adminId]);
-    
-    return result.rows[0];
+  // Clean up old audit logs (maintenance function)
+  static async cleanupOldAuditLogs(daysToKeep: number = 90): Promise<number> {
+    try {
+      const result = await ConnectionManager.query(AdminAuditLogQueries.DELETE_OLD_LOGS, [daysToKeep]);
+      return result.rows[0]?.deleted_count || 0;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get database health status
+  static async getDatabaseHealth(): Promise<any> {
+    try {
+      const [healthResult, tablesResult] = await Promise.all([
+        ConnectionManager.query(`
+          SELECT 
+            'Database Connected' as status,
+            NOW() AT TIME ZONE 'Asia/Kolkata' as server_time,
+            version() as postgres_version
+        `),
+        ConnectionManager.query(`SELECT * FROM get_table_status() ORDER BY tbl_name`)
+      ]);
+
+      return {
+        status: healthResult.rows[0],
+        tables: tablesResult.rows
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Validate admin permissions for action
+  static async validateAdminAction(adminId: string, action: string, resource: string): Promise<boolean> {
+    try {
+      const admin = await this.getAdminById(adminId);
+      if (!admin || !admin.isactive) return false;
+
+      // Basic role-based validation
+      switch (admin.role) {
+        case 'SUPER_ADMIN':
+          return true; // Super admin has all permissions
+        case 'CAMPUS_ADMIN':
+          return ['grievance', 'student', 'attachment'].includes(resource);
+        case 'DEPT_ADMIN':
+          return ['grievance'].includes(resource) && admin.department === 'ACADEMIC';
+        default:
+          return false;
+      }
+    } catch (error) {
+      return false;
+    }
   }
 }

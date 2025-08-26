@@ -11,7 +11,7 @@
 -- - Pre-populated campus data for DSEU
 -- 
 -- Models supported:
--- - StudentInfo 
+-- - PersonalInfo
 -- - AdminInfo with role-based permissions
 -- - AdminAuditLog for security tracking
 -- - IssueList for predefined grievance categories
@@ -28,7 +28,7 @@ DROP TABLE IF EXISTS Grievance CASCADE;
 DROP TABLE IF EXISTS IssueList CASCADE;
 DROP TABLE IF EXISTS Admin_Audit_Log CASCADE;
 DROP TABLE IF EXISTS Admin CASCADE;
-DROP TABLE IF EXISTS StudentInfo CASCADE;
+DROP TABLE IF EXISTS PersonalInfo CASCADE;
 DROP TABLE IF EXISTS ProgramInfo CASCADE;
 DROP TABLE IF EXISTS CampusInfo CASCADE;
 DROP TABLE IF EXISTS AcademicInfo CASCADE;
@@ -70,8 +70,8 @@ CREATE TABLE ProgramInfo (
 
 
 
--- Create StudentInfo table 
-CREATE TABLE StudentInfo (
+-- Create PersonalInfo table
+CREATE TABLE PersonalInfo (
     Id SERIAL,
     RollNo VARCHAR(50) PRIMARY KEY,
     Name VARCHAR(255) NOT NULL,
@@ -120,7 +120,7 @@ CREATE TABLE AcademicInfo (
     Status VARCHAR(50) DEFAULT 'active',
     CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
     UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    CONSTRAINT fk_academicinfo_rollno FOREIGN KEY (RollNo) REFERENCES StudentInfo(RollNo) ON DELETE CASCADE,
+    CONSTRAINT fk_academicinfo_rollno FOREIGN KEY (RollNo) REFERENCES PersonalInfo(RollNo) ON DELETE CASCADE,
     CONSTRAINT fk_academicinfo_program FOREIGN KEY (ProgramId) REFERENCES ProgramInfo(ProgramId) ON DELETE CASCADE,
     CONSTRAINT fk_academicinfo_campus FOREIGN KEY (CampusId) REFERENCES CampusInfo(CampusId) ON DELETE CASCADE,
     CONSTRAINT unique_rollno_academicyear_term UNIQUE (RollNo, AcademicYear, Term)
@@ -138,7 +138,7 @@ CREATE TABLE Grievance (
    HasAttachments BOOLEAN DEFAULT FALSE,
    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-   CONSTRAINT fk_grievance_student FOREIGN KEY (RollNo) REFERENCES StudentInfo(RollNo) ON DELETE CASCADE,
+   CONSTRAINT fk_grievance_student FOREIGN KEY (RollNo) REFERENCES PersonalInfo(RollNo) ON DELETE CASCADE,
    CONSTRAINT fk_grievance_campus FOREIGN KEY (CampusId) REFERENCES CampusInfo(CampusId),
    CONSTRAINT fk_grievance_issue FOREIGN KEY (IssueCode) REFERENCES IssueList(IssueCode)
 );
@@ -197,10 +197,10 @@ CREATE INDEX idx_issuelist_active ON IssueList(IsActive);
 CREATE INDEX idx_programinfo_code ON ProgramInfo(ProgramCode);
 CREATE INDEX idx_programinfo_name ON ProgramInfo(ProgramName);
 CREATE INDEX idx_programinfo_type ON ProgramInfo(ProgramType);
-CREATE INDEX idx_studentinfo_rollno ON StudentInfo(RollNo);
-CREATE INDEX idx_studentinfo_email ON StudentInfo(Email);
-CREATE INDEX idx_studentinfo_isverified ON StudentInfo(IsVerified);
-CREATE INDEX idx_studentinfo_campus ON StudentInfo(CampusId);
+CREATE INDEX idx_personalinfo_rollno ON PersonalInfo(RollNo);
+CREATE INDEX idx_personalinfo_email ON PersonalInfo(Email);
+CREATE INDEX idx_personalinfo_isverified ON PersonalInfo(IsVerified);
+CREATE INDEX idx_personalinfo_campus ON PersonalInfo(CampusId);
 CREATE INDEX idx_admin_adminid ON Admin(AdminId);
 CREATE INDEX idx_admin_email ON Admin(Email);
 CREATE INDEX idx_admin_campus ON Admin(CampusId);
@@ -244,8 +244,8 @@ CREATE TRIGGER update_programinfo_updated_at
     BEFORE UPDATE ON ProgramInfo 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_studentinfo_updated_at 
-    BEFORE UPDATE ON StudentInfo 
+CREATE TRIGGER update_personalinfo_updated_at 
+    BEFORE UPDATE ON PersonalInfo 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_admin_updated_at 
@@ -268,7 +268,7 @@ CREATE TRIGGER update_grievance_updated_at
 CREATE OR REPLACE FUNCTION check_all_tables_exist()
 RETURNS BOOLEAN AS $$
 DECLARE
-    required_tables TEXT[] := ARRAY['campusinfo', 'issuelist', 'programinfo', 'studentinfo', 'admin', 'academicinfo', 'grievance', 'tracking', 'attachment', 'admin_audit_log'];
+    required_tables TEXT[] := ARRAY['campusinfo', 'issuelist', 'programinfo', 'personalinfo', 'admin', 'academicinfo', 'grievance', 'tracking', 'attachment', 'admin_audit_log'];
     tbl_name TEXT;
     table_exists BOOLEAN;
     missing_tables TEXT[] := ARRAY[]::TEXT[];
@@ -307,7 +307,7 @@ BEGIN
     UNION ALL
     SELECT 'ProgramInfo'::TEXT, COUNT(*) FROM ProgramInfo
     UNION ALL
-    SELECT 'StudentInfo'::TEXT, COUNT(*) FROM StudentInfo
+    SELECT 'PersonalInfo'::TEXT, COUNT(*) FROM PersonalInfo
     UNION ALL
     SELECT 'Admin'::TEXT, COUNT(*) FROM Admin
     UNION ALL
@@ -327,7 +327,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON TABLE CampusInfo IS 'Stores campus information for DSEU';
 COMMENT ON TABLE IssueList IS 'Stores predefined grievance categories with attachment requirements';
 COMMENT ON TABLE ProgramInfo IS 'Stores academic program information';
-COMMENT ON TABLE StudentInfo IS 'Stores student information and authentication data';
+COMMENT ON TABLE PersonalInfo IS 'Stores personal information and authentication data';
 COMMENT ON TABLE Admin IS 'Stores administrator accounts with role-based permissions';
 COMMENT ON TABLE AcademicInfo IS 'Stores student academic enrollment information connecting students to programs, campuses, and academic terms';
 COMMENT ON TABLE Grievance IS 'Stores student grievance submissions with dual ID system';

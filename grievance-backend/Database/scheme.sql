@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS ProgramInfo (
 
 
 
--- StudentInfo table (renamed from PersonalInfo)
-CREATE TABLE IF NOT EXISTS StudentInfo (
+-- PersonalInfo table (renamed from PersonalInfo)
+CREATE TABLE IF NOT EXISTS PersonalInfo (
     Id SERIAL,
     RollNo VARCHAR(50) PRIMARY KEY,
     Name VARCHAR(255) NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS AcademicInfo (
     Status VARCHAR(50) DEFAULT 'active',
     CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
     UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-    CONSTRAINT fk_academicinfo_rollno FOREIGN KEY (RollNo) REFERENCES StudentInfo(RollNo) ON DELETE CASCADE,
+    CONSTRAINT fk_academicinfo_rollno FOREIGN KEY (RollNo) REFERENCES PersonalInfo(RollNo) ON DELETE CASCADE,
     CONSTRAINT fk_academicinfo_program FOREIGN KEY (ProgramId) REFERENCES ProgramInfo(ProgramId) ON DELETE CASCADE,
     CONSTRAINT fk_academicinfo_campus FOREIGN KEY (CampusId) REFERENCES CampusInfo(CampusId) ON DELETE CASCADE,
     CONSTRAINT unique_rollno_academicyear_term UNIQUE (RollNo, AcademicYear, Term)
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS Grievance (
    HasAttachments BOOLEAN DEFAULT FALSE,
    CreatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
    UpdatedAt TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Kolkata'),
-   CONSTRAINT fk_grievance_student FOREIGN KEY (RollNo) REFERENCES StudentInfo(RollNo) ON DELETE CASCADE,
+   CONSTRAINT fk_grievance_student FOREIGN KEY (RollNo) REFERENCES PersonalInfo(RollNo) ON DELETE CASCADE,
    CONSTRAINT fk_grievance_campus FOREIGN KEY (CampusId) REFERENCES CampusInfo(CampusId),
    CONSTRAINT fk_grievance_issue FOREIGN KEY (IssueCode) REFERENCES IssueList(IssueCode)
 );
@@ -149,10 +149,10 @@ CREATE INDEX IF NOT EXISTS idx_issuelist_active ON IssueList(IsActive);
 CREATE INDEX IF NOT EXISTS idx_programinfo_code ON ProgramInfo(ProgramCode);
 CREATE INDEX IF NOT EXISTS idx_programinfo_name ON ProgramInfo(ProgramName);
 CREATE INDEX IF NOT EXISTS idx_programinfo_type ON ProgramInfo(ProgramType);
-CREATE INDEX IF NOT EXISTS idx_studentinfo_rollno ON StudentInfo(RollNo);
-CREATE INDEX IF NOT EXISTS idx_studentinfo_email ON StudentInfo(Email);
-CREATE INDEX IF NOT EXISTS idx_studentinfo_isverified ON StudentInfo(IsVerified);
-CREATE INDEX IF NOT EXISTS idx_studentinfo_campus ON StudentInfo(CampusId);
+CREATE INDEX IF NOT EXISTS idx_personalinfo_rollno ON PersonalInfo(RollNo);
+CREATE INDEX IF NOT EXISTS idx_personalinfo_email ON PersonalInfo(Email);
+CREATE INDEX IF NOT EXISTS idx_personalinfo_isverified ON PersonalInfo(IsVerified);
+CREATE INDEX IF NOT_EXISTS idx_personalinfo_campus ON PersonalInfo(CampusId);
 CREATE INDEX IF NOT EXISTS idx_admin_adminid ON Admin(AdminId);
 CREATE INDEX IF NOT EXISTS idx_admin_email ON Admin(Email);
 CREATE INDEX IF NOT EXISTS idx_admin_campus ON Admin(CampusId);

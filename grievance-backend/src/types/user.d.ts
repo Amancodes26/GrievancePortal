@@ -1,6 +1,6 @@
 import { DatabaseAdminRole, Department } from './common';
 
-// Student user interface aligned with StudentInfo model
+// Student user interface aligned with PersonalInfo model
 export interface StudentUser {
   rollno: string;
   name: string;

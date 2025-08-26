@@ -5,7 +5,7 @@ import {
   AttachmentQueries, 
   AdminQueries,
   CampusInfoQueries,
-  StudentInfoQueries,
+  PersonalInfoQueries,
   IssueListQueries
 } from "../db/queries";
 
@@ -53,17 +53,17 @@ export class DatabaseService {
   }
 
   // Student Info related functions
-  static async getAllStudentInfo() {
-    const result = await ConnectionManager.query(StudentInfoQueries.GET_ALL);
+  static async getAllPersonalInfo() {
+    const result = await ConnectionManager.query(PersonalInfoQueries.GET_ALL);
     return result.rows;
   }
 
-  static async getStudentInfoByRollNo(rollNo: string) {
-    const result = await ConnectionManager.query(StudentInfoQueries.GET_BY_ROLLNO, [rollNo]);
+  static async getPersonalInfoByRollNo(rollNo: string) {
+    const result = await ConnectionManager.query(PersonalInfoQueries.GET_BY_ROLLNO, [rollNo]);
     return result.rows[0] || null;
   }
 
-  static async createStudentInfo(data: any) {
+  static async createPersonalInfo(data: any) {
     const values = [
       data.rollNo,
       data.campusId,
@@ -73,7 +73,7 @@ export class DatabaseService {
       data.email,
       data.phone
     ];
-    const result = await ConnectionManager.query(StudentInfoQueries.CREATE, values);
+    const result = await ConnectionManager.query(PersonalInfoQueries.CREATE, values);
     return result.rows[0];
   }
 
@@ -123,7 +123,7 @@ export class DatabaseService {
         'attachment',
         'admin',
         'campusinfo',
-        'studentinfo',
+        'PersonalInfo',
         'issuelist',
         'academicinfo',
         'programinfo'

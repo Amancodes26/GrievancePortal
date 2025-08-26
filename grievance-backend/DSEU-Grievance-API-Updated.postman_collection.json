@@ -1,0 +1,613 @@
+{
+	"info": {
+		"name": "DSEU Grievance Portal API - Updated 2025",
+		"description": "Complete API collection for DSEU Grievance Management System with all endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔧 System Health & Status",
+			"item": [
+				{
+					"name": "API Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/health",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health"]
+						},
+						"description": "Check API and database health status"
+					}
+				},
+				{
+					"name": "Database Pool Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/pool-status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "pool-status"]
+						},
+						"description": "Check database connection pool status"
+					}
+				},
+				{
+					"name": "Test Endpoint",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/test",
+							"host": ["{{base_url}}"],
+							"path": ["api", "test"]
+						},
+						"description": "Basic API test endpoint"
+					}
+				}
+			]
+		},
+		{
+			"name": "👨‍🎓 Student Authentication",
+			"item": [
+				{
+					"name": "Check Roll Number Exists",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/auth/rollNumber-exist/2024CS001",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "auth", "rollNumber-exist", "2024CS001"]
+						},
+						"description": "Check if a roll number exists in the system"
+					}
+				},
+				{
+					"name": "Verify Partial Email",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/auth/verify-partial-email/2024CS001/rahul.sharma",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "auth", "verify-partial-email", "2024CS001", "rahul.sharma"]
+						},
+						"description": "Verify partial email for password reset"
+					}
+				},
+				{
+					"name": "Set Student Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rollNumber\": \"2024CS001\",\n  \"password\": \"SecurePass123!\",\n  \"confirmPassword\": \"SecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/auth/set-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "auth", "set-password"]
+						},
+						"description": "Set password for first-time users"
+					}
+				},
+				{
+					"name": "Student Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.globals.set('student_token', jsonData.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rollNumber\": \"2024CS001\",\n  \"password\": \"SecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "auth", "login"]
+						},
+						"description": "Student login - automatically saves token to globals"
+					}
+				}
+			]
+		},
+		{
+			"name": "👨‍💼 Admin Authentication",
+			"item": [
+				{
+					"name": "Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.globals.set('admin_token', jsonData.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@dseu.ac.in\",\n  \"password\": \"AdminPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "login"]
+						},
+						"description": "Admin login - automatically saves token to globals"
+					}
+				}
+			]
+		},
+		{
+			"name": "📝 Grievance Management",
+			"item": [
+				{
+					"name": "Create Grievance",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{student_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"Subject\": \"Library Issue - Book Not Available\",\n  \"Description\": \"The required textbook for Computer Science is not available in the library despite being listed in the syllabus.\",\n  \"IssueCode\": \"LIB001\",\n  \"CampusId\": \"CAM001\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/grievances",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "grievances"]
+						},
+						"description": "Create a new grievance (requires student authentication)"
+					}
+				},
+				{
+					"name": "Get My Grievances",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{student_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/grievances/my-grievances",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "grievances", "my-grievances"]
+						},
+						"description": "Get all grievances by the authenticated student"
+					}
+				},
+				{
+					"name": "Get All Grievances (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/grievances",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "grievances"]
+						},
+						"description": "Get all grievances (admin view)"
+					}
+				},
+				{
+					"name": "Get Grievance by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{student_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/grievances/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "grievances", "1"]
+						},
+						"description": "Get a specific grievance by its database ID"
+					}
+				},
+				{
+					"name": "Get Grievance by Grievance ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/grievances/grievance/GRV-2024-123456",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "grievances", "grievance", "GRV-2024-123456"]
+						},
+						"description": "Get grievance by generated grievance ID (public endpoint)"
+					}
+				},
+				{
+					"name": "Search Grievance by Issue ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/grievances/search/GRV-2024-123456",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "grievances", "search", "GRV-2024-123456"]
+						},
+						"description": "Search grievance by issue ID (public endpoint)"
+					}
+				},
+				{
+					"name": "Get Grievances by Roll Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/grievances/by-rollno/2024CS001",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "grievances", "by-rollno", "2024CS001"]
+						},
+						"description": "Get grievances by specific roll number (admin only)"
+					}
+				},
+				{
+					"name": "Get Grievance Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/grievances/stats/overview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "grievances", "stats", "overview"]
+						},
+						"description": "Get grievance statistics and analytics"
+					}
+				}
+			]
+		},
+		{
+			"name": "💬 Admin Responses",
+			"item": [
+				{
+					"name": "Add Admin Response",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"response\": \"We have noted your concern about library resources. The book has been ordered and will be available within 3-5 business days.\",\n  \"status\": \"in_progress\",\n  \"category\": \"library\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/grievances/GRV-2024-123456/response",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "grievances", "GRV-2024-123456", "response"]
+						},
+						"description": "Add admin response to a grievance"
+					}
+				},
+				{
+					"name": "Redirect Grievance",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"newAdminId\": \"admin123\",\n  \"reason\": \"Redirecting to Library Department for better assistance\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/grievances/GRV-2024-123456/redirect",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "grievances", "GRV-2024-123456", "redirect"]
+						},
+						"description": "Redirect grievance to different admin"
+					}
+				},
+				{
+					"name": "Update Student Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"resolved\",\n  \"studentFeedback\": \"Issue has been resolved successfully\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/grievances/GRV-2024-123456/student-status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "grievances", "GRV-2024-123456", "student-status"]
+						},
+						"description": "Update student status and feedback"
+					}
+				}
+			]
+		},
+		{
+			"name": "📎 Attachments",
+			"item": [
+				{
+					"name": "Upload Attachment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{student_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "grievanceId",
+									"value": "GRV-2024-123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/attachments/upload",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "attachments", "upload"]
+						},
+						"description": "Upload file attachment for a grievance"
+					}
+				},
+				{
+					"name": "Get Attachments by Grievance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{student_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/attachments/grievance/GRV-2024-123456",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "attachments", "grievance", "GRV-2024-123456"]
+						},
+						"description": "Get all attachments for a specific grievance"
+					}
+				},
+				{
+					"name": "Download Attachment",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{student_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/attachments/download/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "attachments", "download", "1"]
+						},
+						"description": "Download a specific attachment by ID"
+					}
+				},
+				{
+					"name": "Delete Attachment",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{student_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/attachments/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "attachments", "1"]
+						},
+						"description": "Delete an attachment by ID"
+					}
+				}
+			]
+		},
+		{
+			"name": "🏢 Admin Management",
+			"item": [
+				{
+					"name": "Admin Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "dashboard"]
+						},
+						"description": "Get admin dashboard data"
+					}
+				},
+				{
+					"name": "Get All Admins (Super Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/super-admin/admins",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "super-admin", "admins"]
+						},
+						"description": "Get all admins (super admin only)"
+					}
+				},
+				{
+					"name": "Department Admin Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/dept-admin/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "dept-admin", "dashboard"]
+						},
+						"description": "Department admin dashboard"
+					}
+				},
+				{
+					"name": "Campus Admin Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/campus-admin/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "campus-admin", "dashboard"]
+						},
+						"description": "Campus admin dashboard"
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000",
+			"type": "string"
+		}
+	]
+}

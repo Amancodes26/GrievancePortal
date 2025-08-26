@@ -62,7 +62,7 @@ export const getDepartmentGrievances = async (req: AuthenticatedRequest, res: Re
     }
 
     // Get department grievances with campus filtering
-    const departmentGrievances = await DeptAdminService.getDepartmentGrievances(department as Department, campusId);
+    const departmentGrievances = await DeptAdminService.getDepartmentGrievances(req.admin?.AdminId || '');
     
     res.status(200).json({
       message: `${department.toUpperCase()} department grievances retrieved successfully`,
@@ -415,7 +415,7 @@ export const getDepartmentStats = async (req: AuthenticatedRequest, res: Respons
     }
 
     // Get enhanced department statistics
-    const stats = await DeptAdminService.getDepartmentStats(department as Department, campusId);
+    const stats = await DeptAdminService.getDepartmentStats(req.admin?.AdminId || '');
 
     res.status(200).json({
       message: 'Department statistics retrieved successfully',

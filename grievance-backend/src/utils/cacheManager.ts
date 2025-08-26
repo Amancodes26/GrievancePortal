@@ -5,7 +5,7 @@
 
 import cache, { CacheKeys, CacheTTL, CacheUtils } from './cache';
 import { AdminInfo } from '../models/AdminInfo';
-import { StudentInfo } from '../models/StudentInfo';
+import { PersonalInfo } from '../models/PersonalInfo';
 import { CampusInfo } from '../models/CampusInfo';
 import { Grievance } from '../models/Grievance';
 import { Tracking } from '../models/Tracking';
@@ -47,13 +47,13 @@ export class CacheManager {
   /**
    * Student-related caching methods
    */
-  static async cacheStudentData(rollno: string, studentData: StudentInfo): Promise<void> {
+  static async cacheStudentData(rollno: string, studentData: PersonalInfo): Promise<void> {
     const key = CacheKeys.studentByRollNo(rollno);
     cache.set(key, studentData, CacheTTL.MEDIUM);
   }
 
-  static async getStudentData(rollno: string): Promise<StudentInfo | null> {
-    return cache.get<StudentInfo>(CacheKeys.studentByRollNo(rollno));
+  static async getStudentData(rollno: string): Promise<PersonalInfo | null> {
+    return cache.get<PersonalInfo>(CacheKeys.studentByRollNo(rollno));
   }
 
   static async invalidateStudentCache(rollno: string): Promise<void> {

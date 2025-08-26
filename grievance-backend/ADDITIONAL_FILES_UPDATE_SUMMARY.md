@@ -59,7 +59,7 @@ This document summarizes all the updates made to constants, types, utils, and he
 - **Model interfaces**:
   - `CampusInfo`: Aligned with CampusInfo model
   - `AdminInfo`: Aligned with AdminInfo model  
-  - `StudentInfo`: Aligned with StudentInfo model
+  - `PersonalInfo`: Aligned with PersonalInfo model
   - `GrievanceInfo`: Aligned with Grievance model
   - `TrackingInfo`: Aligned with Tracking model
 
@@ -80,7 +80,7 @@ This document summarizes all the updates made to constants, types, utils, and he
   - `admin`: Admin authentication data  
   - `authenticatedUser`: Full user object
 - **AuthenticatedRequest interface**: For controller typing
-- **Aligned with current models**: StudentInfo, AdminInfo
+- **Aligned with current models**: PersonalInfo, AdminInfo
 
 #### ✅ `global.d.ts` - **ENHANCED**
 - **Environment variables typing**: ProcessEnv interface

@@ -3,7 +3,7 @@
   "properties": {
     "rollno": {
       "type": "string",
-      "description": "Student roll number (FK to StudentInfo.rollno)"
+      "description": "Student roll number (FK to PersonalInfo.rollno)"
     },
     "issueCode": {
       "type": "integer",

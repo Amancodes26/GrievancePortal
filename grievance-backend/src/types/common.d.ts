@@ -33,8 +33,8 @@ export interface AdminInfo {
   CampusId?: number;
 }
 
-// Student information aligned with StudentInfo model  
-export interface StudentInfo {
+// Student information aligned with PersonalInfo model  
+export interface PersonalInfo {
   rollno: string;
   name: string;
   email: string;

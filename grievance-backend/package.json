@@ -4,7 +4,8 @@
   "main": "dist/index.js",
   "engines": {
     "node": ">=18.x"
-  },  "scripts": {
+  },
+  "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
@@ -15,7 +16,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",  "dependencies": {
+  "description": "",
+  "dependencies": {
     "@types/ajv": "^0.0.5",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
@@ -45,8 +47,9 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "uuid": "^11.1.0",
-    "zod": "^3.25.64"
-  },  "devDependencies": {
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
     "form-data": "^4.0.3",
     "node-fetch": "^2.6.7",
     "nodemon": "^3.1.10"

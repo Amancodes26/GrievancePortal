@@ -18,13 +18,13 @@ export const createAdmin = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    const { name, email, phone, password, role, campusId, isMainCampus } = req.body;
+    const { name, email, phone, password, role, department, campusId, isMainCampus } = req.body;
     
     // Validate required fields
-    if (!name || !email || !password || !role) {
+    if (!name || !email || !password || !role || !department) {
       res.status(400).json({ 
         success: false, 
-        message: 'Name, email, password, and role are required.' 
+        message: 'Name, email, password, role, and department are required.' 
       });
       return;
     }
@@ -44,7 +44,8 @@ export const createAdmin = async (req: Request, res: Response): Promise<void> =>
       email, 
       phone, 
       password, 
-      role, 
+      role,
+      department,
       campusId
     });
 
@@ -159,17 +160,17 @@ export const assignAdminToCampus = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const assignment = await SuperAdminService.assignAdminToCampus({
-      adminId,
-      campusId: parseInt(campusId),
-      department,
-      isPrimary: isPrimary || false
-    });
+    // TODO: Implement assignAdminToCampus in service
+    // const assignment = await SuperAdminService.assignAdminToCampus({
+    //   adminId,
+    //   campusId: parseInt(campusId),
+    //   department,
+    //   isPrimary: isPrimary || false
+    // });
 
-    res.status(200).json({ 
-      success: true, 
-      data: assignment,
-      message: 'Admin assigned to campus successfully'
+    res.status(501).json({ 
+      success: false, 
+      message: 'Admin campus assignment not yet implemented' 
     });
   } catch (error: any) {
     res.status(500).json({ 
@@ -245,8 +246,7 @@ export const getAdminAuditLogs = async (req: Request, res: Response): Promise<vo
     const { adminId, limit = 100, offset = 0 } = req.query;
     const logs = await SuperAdminService.getAdminAuditLogs(
       adminId as string, 
-      parseInt(limit as string), 
-      parseInt(offset as string)
+      parseInt(limit as string)
     );
     
     res.status(200).json({ 

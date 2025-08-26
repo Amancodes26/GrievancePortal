@@ -1,6 +1,6 @@
 // This file contains all project-wide custom type extensions aligned with current models
 
-import { StudentInfo } from '../models/StudentInfo';
+import { PersonalInfo } from '../models/PersonalInfo';
 import { AdminInfo } from '../models/AdminInfo';
 import { StudentUser, AdminUser } from './user';
 import { DatabaseAdminRole, Department, AdminStatus, StudentStatus } from './common';
@@ -43,8 +43,8 @@ declare global {
         IsActive: boolean;
       };
 
-      authenticatedUser?: StudentInfo | AdminInfo;
-      User?: StudentInfo; // Legacy support
+      authenticatedUser?: PersonalInfo | AdminInfo;
+      User?: PersonalInfo; // Legacy support
     }
   }
 }

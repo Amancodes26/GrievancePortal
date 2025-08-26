@@ -42,7 +42,7 @@ export const getCampusGrievances = async (req: AuthenticatedRequest, res: Respon
     }
 
     // Get campus grievances (non-ACADEMIC/EXAM issues)
-    const campusGrievances = await DeptAdminService.getDepartmentGrievances('CAMPUS', campusId);
+    const campusGrievances = await DeptAdminService.getDepartmentGrievances(req.admin?.AdminId || '');
     
     res.status(200).json({
       message: 'Campus grievances retrieved successfully',
@@ -281,7 +281,7 @@ export const getCampusDashboard = async (req: AuthenticatedRequest, res: Respons
     }
 
     // Get campus statistics
-    const stats = await DeptAdminService.getDepartmentStats('CAMPUS', campusId);
+    const stats = await DeptAdminService.getDepartmentStats(req.admin?.AdminId || '');
 
     res.status(200).json({
       message: 'Campus dashboard data retrieved successfully',

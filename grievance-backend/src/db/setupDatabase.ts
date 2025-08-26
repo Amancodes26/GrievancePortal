@@ -37,7 +37,7 @@ export async function checkAllTablesExistSimple(): Promise<boolean> {
     const requiredTables = [
       'campusinfo',
       'programinfo', 
-      'studentinfo',
+      'PersonalInfo',
       'admin',
       'academicinfo',
       'issuelist',
@@ -72,7 +72,7 @@ export async function getTableStatusSimple(): Promise<Array<{table_name: string,
     const tables = [
       { name: 'CampusInfo', table: 'campusinfo' },
       { name: 'ProgramInfo', table: 'programinfo' },
-      { name: 'StudentInfo', table: 'studentinfo' },
+      { name: 'PersonalInfo', table: 'PersonalInfo' },
       { name: 'Admin', table: 'admin' },
       { name: 'AcademicInfo', table: 'academicinfo' },
       { name: 'IssueList', table: 'issuelist' },
@@ -115,7 +115,7 @@ export async function resetDatabase(): Promise<void> {
       'tracking',
       'grievance',
       'academicinfo',
-      'studentinfo',
+      'PersonalInfo',
       'admin',
       'issuelist',
       'programinfo',
@@ -163,12 +163,12 @@ export async function validateSchema(): Promise<{valid: boolean, issues: string[
     // Check for proper foreign key relationships
     const foreignKeyChecks = [
       {
-        table: 'studentinfo',
+        table: 'PersonalInfo',
         column: 'campusid',
         references: 'campusinfo(campusid)',
         query: `
           SELECT COUNT(*) as invalid_count 
-          FROM studentinfo s 
+          FROM PersonalInfo s 
           LEFT JOIN campusinfo c ON s.campusid = c.campusid 
           WHERE s.campusid IS NOT NULL AND c.campusid IS NULL
         `
@@ -176,11 +176,11 @@ export async function validateSchema(): Promise<{valid: boolean, issues: string[
       {
         table: 'grievance', 
         column: 'rollno',
-        references: 'studentinfo(rollno)',
+        references: 'PersonalInfo(rollno)',
         query: `
           SELECT COUNT(*) as invalid_count 
           FROM grievance g 
-          LEFT JOIN studentinfo s ON g.rollno = s.rollno 
+          LEFT JOIN PersonalInfo s ON g.rollno = s.rollno 
           WHERE s.rollno IS NULL
         `
       },
@@ -224,7 +224,7 @@ export async function validateSchema(): Promise<{valid: boolean, issues: string[
     // Check for duplicate primary keys
     const duplicateChecks = [
       { table: 'campusinfo', key: 'campusid' },
-      { table: 'studentinfo', key: 'rollno' },
+      { table: 'PersonalInfo', key: 'rollno' },
       { table: 'admin', key: 'adminid' },
       { table: 'grievance', key: 'grievanceid' }
     ];
@@ -274,7 +274,7 @@ export async function getDatabaseHealthReport(): Promise<any> {
     const recentActivity = await getPool().query(`
       SELECT 
         (SELECT COUNT(*) FROM grievance WHERE createdat > NOW() - INTERVAL '7 days') as recent_grievances,
-        (SELECT COUNT(*) FROM studentinfo WHERE createdat > NOW() - INTERVAL '30 days') as recent_students,
+        (SELECT COUNT(*) FROM PersonalInfo WHERE createdat > NOW() - INTERVAL '30 days') as recent_students,
         (SELECT COUNT(*) FROM tracking WHERE updatedat > NOW() - INTERVAL '7 days') as recent_updates
     `);
 
