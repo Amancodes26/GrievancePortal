@@ -188,12 +188,12 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"Email\": \"admin@dseu.ac.in\",\n  \"Password\": \"admin123\"\n}"
+                  "raw": "{\n  \"email\": \"admin@dseu.ac.in\",\n  \"password\": \"admin123\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/admin/login",
+                  "raw": "{{baseUrl}}/admin/auth/login",
                   "host": ["{{baseUrl}}"],
-                  "path": ["admin", "login"]
+                  "path": ["admin", "auth", "login"]
                 },
                 "description": "Admin login with email and password"
               },
@@ -211,8 +211,8 @@
                       "// Extract and save admin token",
                       "if (pm.response.code === 200) {",
                       "    const response = pm.response.json();",
-                      "    if (response.data && response.data.token) {",
-                      "        pm.collectionVariables.set('adminToken', response.data.token);",
+                      "    if (response.success && response.token) {",
+                      "        pm.collectionVariables.set('adminToken', response.token);",
                       "        console.log('Admin auth token saved');",
                       "    }",
                       "}"

@@ -56,9 +56,25 @@ This directory contains comprehensive Postman collection files for testing all A
   - Comprehensive grievance lifecycle testing
   - Search and filtering operations
 
-### 6. **Auth-Grievance-API.postman_collection.json**
-- **Purpose:** Legacy collection (combined auth and grievance)
-- **Note:** This is an older combined collection. Use the separate collections above for better organization.
+### 6. **Admin_API_Updated.postman_collection.json** 🆕
+- **Purpose:** Complete Admin API testing and management
+- **Key Features:**
+  - Admin authentication (login/password management)
+  - Admin profile management
+  - Admin dashboard with statistics
+  - Database migration endpoint testing
+  - Comprehensive error handling tests
+  - Security validation scenarios
+  - Token management automation
+- **Status:** ✅ Fully tested and verified (September 1, 2025)
+
+### 7. **Auth-Grievance-API.postman_collection.json**
+- **Purpose:** Combined authentication and grievance management
+- **Key Features:**
+  - Student and Admin authentication flows
+  - Complete grievance lifecycle testing
+  - Integrated token management
+- **Status:** ✅ Updated with corrected admin endpoints
 
 ## Setup Instructions
 
@@ -80,6 +96,13 @@ baseUrl: http://localhost:5000
 ```
 
 #### Collection-Specific Variables:
+
+**For Admin API:**
+```
+adminEmail: admin@dseu.ac.in (Default admin email)
+adminPassword: admin123 (Default admin password)
+adminToken: Bearer admin_jwt_token_here (Auto-set after admin login)
+```
 
 **For User Auth API:**
 ```
@@ -121,15 +144,16 @@ studentToken: Bearer student_jwt_token
 
 Most APIs require authentication. Follow this sequence:
 
-1. **First, run User Authentication:**
+1. **For Admin Operations (NEW):**
+   - Use "Admin_API_Updated" → "Admin Authentication" → "Admin Login"
+   - This will generate an admin JWT token and store it in `adminToken` variable
+   - Admin token will be automatically used in subsequent admin requests
+   - Test admin profile and dashboard endpoints
+
+2. **For User Operations:**
    - Use "Users_Auth_API" → "Authentication Operations" → "User Login"
    - This will generate a JWT token and store it in `userToken` variable
    - Token will be automatically used in subsequent requests
-
-2. **For Admin Operations:**
-   - Ensure you have admin credentials
-   - Login through admin authentication endpoints
-   - Admin token will be stored separately as `adminToken`
 
 ### 4. Running Tests
 
