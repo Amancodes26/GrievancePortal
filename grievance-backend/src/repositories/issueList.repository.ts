@@ -34,17 +34,17 @@ export class IssueListRepository {
     try {
       let query = `
         SELECT 
-          "Id",
-          "IssueCode",
-          "IssueTitle", 
-          "Category",
-          "RequiredAttachments",
-          "IssueLevel",
-          "IsActive",
-          "CreatedAt",
-          "UpdatedAt"
+          id as "Id",
+          issuecode as "IssueCode",
+          issuetitle as "IssueTitle", 
+          category as "Category",
+          requiredattachments as "RequiredAttachments",
+          issuelevel as "IssueLevel",
+          isactive as "IsActive",
+          createdat as "CreatedAt",
+          updatedat as "UpdatedAt"
         FROM issuelist 
-        WHERE "IsActive" = true
+        WHERE isactive = true
       `;
       
       const params: any[] = [];
@@ -52,20 +52,20 @@ export class IssueListRepository {
 
       // Add category filter
       if (filters?.category) {
-        query += ` AND "Category" = $${paramIndex}`;
+        query += ` AND category = $${paramIndex}`;
         params.push(filters.category);
         paramIndex++;
       }
 
       // Add level filter
       if (filters?.level) {
-        query += ` AND "IssueLevel" = $${paramIndex}`;
+        query += ` AND issuelevel = $${paramIndex}`;
         params.push(filters.level);
         paramIndex++;
       }
 
       // Add sorting and pagination
-      query += ` ORDER BY "CreatedAt" DESC`;
+      query += ` ORDER BY createdat DESC`;
       
       if (filters?.limit) {
         query += ` LIMIT $${paramIndex}`;
@@ -108,15 +108,15 @@ export class IssueListRepository {
     try {
       let query = `
         SELECT 
-          "Id",
-          "IssueCode",
-          "IssueTitle", 
-          "Category",
-          "RequiredAttachments",
-          "IssueLevel",
-          "IsActive",
-          "CreatedAt",
-          "UpdatedAt"
+          id as "Id",
+          issuecode as "IssueCode",
+          issuetitle as "IssueTitle", 
+          category as "Category",
+          requiredattachments as "RequiredAttachments",
+          issuelevel as "IssueLevel",
+          isactive as "IsActive",
+          createdat as "CreatedAt",
+          updatedat as "UpdatedAt"
         FROM issuelist 
         WHERE 1=1
       `;
@@ -126,25 +126,25 @@ export class IssueListRepository {
 
       // Add filters
       if (filters?.category) {
-        query += ` AND "Category" = $${paramIndex}`;
+        query += ` AND category = $${paramIndex}`;
         params.push(filters.category);
         paramIndex++;
       }
 
       if (filters?.level) {
-        query += ` AND "IssueLevel" = $${paramIndex}`;
+        query += ` AND issuelevel = $${paramIndex}`;
         params.push(filters.level);
         paramIndex++;
       }
 
       if (filters?.active !== undefined) {
-        query += ` AND "IsActive" = $${paramIndex}`;
+        query += ` AND isactive = $${paramIndex}`;
         params.push(filters.active);
         paramIndex++;
       }
 
       // Add sorting and pagination
-      query += ` ORDER BY "CreatedAt" DESC`;
+      query += ` ORDER BY createdat DESC`;
       
       if (filters?.limit) {
         query += ` LIMIT $${paramIndex}`;
@@ -181,17 +181,17 @@ export class IssueListRepository {
     try {
       const query = `
         SELECT 
-          "Id",
-          "IssueCode",
-          "IssueTitle", 
-          "Category",
-          "RequiredAttachments",
-          "IssueLevel",
-          "IsActive",
-          "CreatedAt",
-          "UpdatedAt"
+          id as "Id",
+          issuecode as "IssueCode",
+          issuetitle as "IssueTitle", 
+          category as "Category",
+          requiredattachments as "RequiredAttachments",
+          issuelevel as "IssueLevel",
+          isactive as "IsActive",
+          createdat as "CreatedAt",
+          updatedat as "UpdatedAt"
         FROM issuelist 
-        WHERE "IssueCode" = $1
+        WHERE issuecode = $1
       `;
 
       console.info('[IssueListRepository.getIssueByCode] Executing query:', { 
@@ -227,26 +227,26 @@ export class IssueListRepository {
 
       const query = `
         INSERT INTO issuelist (
-          "IssueCode",
-          "IssueTitle", 
-          "Category",
-          "RequiredAttachments",
-          "IssueLevel",
-          "IsActive",
-          "CreatedAt",
-          "UpdatedAt"
+          issuecode,
+          issuetitle, 
+          category,
+          requiredattachments,
+          issuelevel,
+          isactive,
+          createdat,
+          updatedat
         ) 
         VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
         RETURNING 
-          "Id",
-          "IssueCode",
-          "IssueTitle", 
-          "Category",
-          "RequiredAttachments",
-          "IssueLevel",
-          "IsActive",
-          "CreatedAt",
-          "UpdatedAt"
+          id as "Id",
+          issuecode as "IssueCode",
+          issuetitle as "IssueTitle", 
+          category as "Category",
+          requiredattachments as "RequiredAttachments",
+          issuelevel as "IssueLevel",
+          isactive as "IsActive",
+          createdat as "CreatedAt",
+          updatedat as "UpdatedAt"
       `;
 
       const params = [
@@ -317,31 +317,31 @@ export class IssueListRepository {
       let paramIndex = 1;
 
       if (updateData.IssueTitle !== undefined) {
-        updateFields.push(`"IssueTitle" = $${paramIndex}`);
+        updateFields.push(`issuetitle = $${paramIndex}`);
         params.push(updateData.IssueTitle);
         paramIndex++;
       }
 
       if (updateData.Category !== undefined) {
-        updateFields.push(`"Category" = $${paramIndex}`);
+        updateFields.push(`category = $${paramIndex}`);
         params.push(updateData.Category);
         paramIndex++;
       }
 
       if (updateData.RequiredAttachments !== undefined) {
-        updateFields.push(`"RequiredAttachments" = $${paramIndex}`);
+        updateFields.push(`requiredattachments = $${paramIndex}`);
         params.push(JSON.stringify(updateData.RequiredAttachments));
         paramIndex++;
       }
 
       if (updateData.IssueLevel !== undefined) {
-        updateFields.push(`"IssueLevel" = $${paramIndex}`);
+        updateFields.push(`issuelevel = $${paramIndex}`);
         params.push(updateData.IssueLevel);
         paramIndex++;
       }
 
       if (updateData.IsActive !== undefined) {
-        updateFields.push(`"IsActive" = $${paramIndex}`);
+        updateFields.push(`isactive = $${paramIndex}`);
         params.push(updateData.IsActive);
         paramIndex++;
       }
@@ -351,22 +351,22 @@ export class IssueListRepository {
       }
 
       // Always update UpdatedAt
-      updateFields.push(`"UpdatedAt" = NOW()`);
+      updateFields.push(`updatedat = NOW()`);
 
       const query = `
         UPDATE issuelist 
         SET ${updateFields.join(', ')}
-        WHERE "IssueCode" = $${paramIndex}
+        WHERE issuecode = $${paramIndex}
         RETURNING 
-          "Id",
-          "IssueCode",
-          "IssueTitle", 
-          "Category",
-          "RequiredAttachments",
-          "IssueLevel",
-          "IsActive",
-          "CreatedAt",
-          "UpdatedAt"
+          id as "Id",
+          issuecode as "IssueCode",
+          issuetitle as "IssueTitle", 
+          category as "Category",
+          requiredattachments as "RequiredAttachments",
+          issuelevel as "IssueLevel",
+          isactive as "IsActive",
+          createdat as "CreatedAt",
+          updatedat as "UpdatedAt"
       `;
 
       params.push(issueCode);
@@ -418,19 +418,19 @@ export class IssueListRepository {
       const query = `
         UPDATE issuelist 
         SET 
-          "IsActive" = $1,
-          "UpdatedAt" = NOW()
-        WHERE "IssueCode" = $2
+          isactive = $1,
+          updatedat = NOW()
+        WHERE issuecode = $2
         RETURNING 
-          "Id",
-          "IssueCode",
-          "IssueTitle", 
-          "Category",
-          "RequiredAttachments",
-          "IssueLevel",
-          "IsActive",
-          "CreatedAt",
-          "UpdatedAt"
+          id as "Id",
+          issuecode as "IssueCode",
+          issuetitle as "IssueTitle", 
+          category as "Category",
+          requiredattachments as "RequiredAttachments",
+          issuelevel as "IssueLevel",
+          isactive as "IsActive",
+          createdat as "CreatedAt",
+          updatedat as "UpdatedAt"
       `;
 
       console.info('[IssueListRepository.toggleIssueStatus] Executing query:', { 
@@ -479,19 +479,19 @@ export class IssueListRepository {
       let paramIndex = 1;
 
       if (filters?.category) {
-        query += ` AND "Category" = $${paramIndex}`;
+        query += ` AND category = $${paramIndex}`;
         params.push(filters.category);
         paramIndex++;
       }
 
       if (filters?.level) {
-        query += ` AND "IssueLevel" = $${paramIndex}`;
+        query += ` AND issuelevel = $${paramIndex}`;
         params.push(filters.level);
         paramIndex++;
       }
 
       if (filters?.active !== undefined) {
-        query += ` AND "isactive" = $${paramIndex}`;
+        query += ` AND isactive = $${paramIndex}`;
         params.push(filters.active);
       }
 

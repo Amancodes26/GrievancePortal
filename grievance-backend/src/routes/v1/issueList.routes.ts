@@ -130,6 +130,21 @@ router.patch(
   issueListController.toggleIssueStatus
 );
 
+/**
+ * @route DELETE /api/v1/issues/:code
+ * @desc Delete issue type (soft delete by setting IsActive to false)
+ * @access Private - Admin only
+ * @middleware adminAuth - Required admin authentication
+ * 
+ * Path Parameters:
+ * - code: string - IssueCode to delete
+ */
+router.delete(
+  '/:code',
+  verifyAdminJWT, // Required admin authentication
+  issueListController.deleteIssue
+);
+
 // Export router with comprehensive configuration
 export default router;
 

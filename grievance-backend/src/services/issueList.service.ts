@@ -449,6 +449,47 @@ export class IssueListService {
   }
 
   /**
+   * Soft deletes an issue type by setting IsActive to false
+   * @param issueCode - Issue code to delete
+   * @param requestingAdminId - Admin ID for audit
+   * @returns Promise<IssueList | null>
+   */
+  async deleteIssue(issueCode: number, requestingAdminId: string): Promise<IssueList | null> {
+    try {
+      console.info('[IssueListService.deleteIssue] Deleting issue', { 
+        issueCode, 
+        requestingAdminId 
+      });
+
+      // Use the toggle status method to set IsActive to false
+      const deletedIssue = await this.issueListRepository.toggleIssueStatus(issueCode, false);
+
+      if (!deletedIssue) {
+        console.warn('[IssueListService.deleteIssue] Issue not found for deletion', { 
+          issueCode 
+        });
+        throw new AppError(`Issue with code ${issueCode} not found`, 404, 'ISSUE_NOT_FOUND');
+      }
+
+      console.info('[IssueListService.deleteIssue] Issue deleted successfully', { 
+        issueCode,
+        requestingAdmin: requestingAdminId
+      });
+
+      return deletedIssue;
+
+    } catch (error) {
+      console.error('[IssueListService.deleteIssue] Error:', error);
+      
+      if (error instanceof AppError) {
+        throw error;
+      }
+      
+      throw new AppError('Failed to delete issue', 500, 'SERVICE_ERROR', error);
+    }
+  }
+
+  /**
    * Sanitizes issue data for public (student) consumption
    * @private
    */

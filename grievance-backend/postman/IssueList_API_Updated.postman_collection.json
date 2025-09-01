@@ -1,0 +1,476 @@
+{
+  "info": {
+    "name": "DSEU Grievance Portal - IssueList API (Updated)",
+    "description": "Updated comprehensive testing collection for IssueList Management API\n\n**Features:**\n- Issue category management\n- CRUD operations with validation\n- Role-based access control\n- Search and filtering with query parameters\n- Status management\n\n**Authentication:** Optional for GET requests, Admin JWT required for modifications\n**Base URL:** {{baseUrl}}/api/v1/issues\n\n**Environment Variables Required:**\n- baseUrl: http://localhost:5000\n- adminToken: Bearer token for admin authentication\n- userToken: Bearer token for user authentication (optional)\n- issueCode: Valid issue code for testing (e.g., 1)\n- testIssueCode: New issue code for creation tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "issuelist-api-updated-v1",
+    "version": {
+      "major": 1,
+      "minor": 1,
+      "patch": 0
+    }
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "issueCode",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "testIssueCode",
+      "value": "1004",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "GET Endpoints (Public Access)",
+      "item": [
+        {
+          "name": "Get All Issues",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has required structure', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', true);",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData.data).to.have.property('issues');",
+                  "    pm.expect(jsonData.data).to.have.property('pagination');",
+                  "});",
+                  "",
+                  "pm.test('Issues array exists and has data', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.issues).to.be.an('array');",
+                  "    if (jsonData.data.issues.length > 0) {",
+                  "        const issue = jsonData.data.issues[0];",
+                  "        pm.expect(issue).to.have.property('Id');",
+                  "        pm.expect(issue).to.have.property('IssueCode');",
+                  "        pm.expect(issue).to.have.property('IssueTitle');",
+                  "        pm.expect(issue).to.have.property('Category');",
+                  "        pm.expect(issue).to.have.property('IssueLevel');",
+                  "        pm.expect(issue).to.have.property('IsActive', true);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Issues Only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All returned issues are active', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.data.issues.length > 0) {",
+                  "        jsonData.data.issues.forEach(issue => {",
+                  "            pm.expect(issue.IsActive).to.be.true;",
+                  "        });",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues?active=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Issues by Category - ACADEMIC",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All issues have ACADEMIC category', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.data.issues.length > 0) {",
+                  "        jsonData.data.issues.forEach(issue => {",
+                  "            pm.expect(issue.Category).to.equal('ACADEMIC');",
+                  "        });",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues?category=ACADEMIC",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "ACADEMIC"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Issues by Level - CAMPUS_LEVEL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All issues have CAMPUS_LEVEL', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.data.issues.length > 0) {",
+                  "        jsonData.data.issues.forEach(issue => {",
+                  "            pm.expect(issue.IssueLevel).to.equal('CAMPUS_LEVEL');",
+                  "        });",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues?level=CAMPUS_LEVEL",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"],
+              "query": [
+                {
+                  "key": "level",
+                  "value": "CAMPUS_LEVEL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Issue by Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Issue details returned', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', true);",
+                  "    pm.expect(jsonData.data).to.have.property('issue');",
+                  "    pm.expect(jsonData.data.issue).to.have.property('IssueCode', parseInt(pm.collectionVariables.get('issueCode')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/{{issueCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "{{issueCode}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Issue by Invalid Code - Should Return 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error response structure', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', false);",
+                  "    pm.expect(jsonData).to.have.property('errorCode', 'ISSUE_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "999"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Only Endpoints (Authentication Required)",
+      "item": [
+        {
+          "name": "Create Issue (Admin Required)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Without admin token, should return 403",
+                  "pm.test('Status code is 403 (unauthorized)', () => {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Authentication required error', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', false);",
+                  "    pm.expect(jsonData.message).to.include('JWT_TOKEN_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IssueCode\": {{testIssueCode}},\n  \"IssueTitle\": \"Test Infrastructure Issue\",\n  \"Category\": \"OTHER\",\n  \"IssueLevel\": \"CAMPUS_LEVEL\",\n  \"RequiredAttachments\": [\"Photo\", \"Description\"],\n  \"IsActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"]
+            }
+          }
+        },
+        {
+          "name": "Update Issue (Admin Required)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Without admin token, should return 403",
+                  "pm.test('Status code is 403 (unauthorized)', () => {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Authentication required error', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', false);",
+                  "    pm.expect(jsonData.message).to.include('JWT_TOKEN_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IssueTitle\": \"Updated Academic Issues Title\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/{{issueCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "{{issueCode}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Issue (Admin Required)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Without admin token, should return 403",
+                  "pm.test('Status code is 403 (unauthorized)', () => {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Authentication required error', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', false);",
+                  "    pm.expect(jsonData.message).to.include('JWT_TOKEN_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "999"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Issue Status (Admin Required)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Without admin token, should return 403",
+                  "pm.test('Status code is 403 (unauthorized)', () => {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Authentication required error', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', false);",
+                  "    pm.expect(jsonData.message).to.include('JWT_TOKEN_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IsActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues/{{issueCode}}/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues", "{{issueCode}}", "toggle"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Advanced Query Examples",
+      "item": [
+        {
+          "name": "Multiple Filters - Active ACADEMIC Issues",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues?active=true&category=ACADEMIC",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true"
+                },
+                {
+                  "key": "category",
+                  "value": "ACADEMIC"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Pagination Example",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/issues?limit=2&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "issues"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "2"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

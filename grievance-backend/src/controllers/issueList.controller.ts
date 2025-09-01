@@ -544,4 +544,91 @@ export class IssueListController {
       }
     }
   };
+
+  /**
+   * DELETE /api/v1/issues/:code
+   * Soft deletes an issue type by setting IsActive to false
+   * 
+   * @route DELETE /api/v1/issues/:code
+   * @access Private (Admin only)
+   */
+  deleteIssue = async (req: Request, res: Response): Promise<void> => {
+    const startTime = Date.now();
+    
+    try {
+      console.info('[IssueListController.deleteIssue] Starting request processing', {
+        path: req.path,
+        method: req.method,
+        params: req.params,
+        adminId: (req as any).admin?.AdminId,
+        timestamp: new Date().toISOString()
+      });
+
+      // Extract admin ID from authenticated admin
+      const adminId = (req as any).admin?.AdminId;
+      if (!adminId) {
+        throw new AppError('Admin authentication required', 401, 'AUTHENTICATION_REQUIRED');
+      }
+
+      // Validate route parameters
+      const paramValidation = IssueCodeParamSchema.safeParse(req.params);
+      if (!paramValidation.success) {
+        const errorMessages = paramValidation.error.errors.map(err => 
+          `${err.path.join('.')}: ${err.message}`
+        ).join(', ');
+        
+        throw new AppError(
+          `Invalid parameters: ${errorMessages}`, 
+          400, 
+          'PARAMETER_VALIDATION_ERROR',
+          paramValidation.error.errors
+        );
+      }
+
+      const { code: issueCode } = paramValidation.data;
+
+      console.info('[IssueListController.deleteIssue] Parameter validation successful', {
+        issueCode,
+        adminId
+      });
+
+      // Delete issue through service layer (soft delete)
+      const deletedIssue = await this.issueListService.deleteIssue(issueCode, adminId);
+
+      const processingTime = Date.now() - startTime;
+      
+      console.info('[IssueListController.deleteIssue] Request completed successfully', {
+        issueCode,
+        processingTimeMs: processingTime,
+        deletedByAdmin: adminId
+      });
+
+      // Return success response
+      ApiResponse.success(res, {
+        issue: deletedIssue,
+        meta: {
+          processingTime: `${processingTime}ms`,
+          timestamp: new Date().toISOString(),
+          deletedBy: adminId
+        }
+      }, 'Issue deleted successfully', 200);
+
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      
+      console.error('[IssueListController.deleteIssue] Request failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        params: req.params,
+        processingTimeMs: processingTime,
+        adminId: (req as any).admin?.AdminId,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
+      if (error instanceof AppError) {
+        ApiResponse.error(res, error.message, error.status, error.code, error.details);
+      } else {
+        ApiResponse.error(res, 'Internal server error occurred while deleting issue', 500, 'INTERNAL_SERVER_ERROR');
+      }
+    }
+  };
 }

@@ -1,0 +1,602 @@
+{
+  "info": {
+    "name": "DSEU Grievance Portal - Tracking API (Updated & Tested)",
+    "description": "Updated and tested comprehensive collection for Tracking Management API\n\n**Features:**\n- Grievance status tracking ✅ WORKING\n- Admin response management ✅ WORKING\n- Grievance redirection ✅ WORKING\n- History tracking ✅ WORKING\n- Status updates ✅ WORKING\n\n**Authentication:** Admin JWT Token required for all endpoints\n**Base URL:** {{baseUrl}}/api/v1/tracking\n\n**Environment Variables Required:**\n- baseUrl: http://localhost:5000\n- adminEmail: admin@dseu.ac.in\n- adminPassword: admin123\n- adminToken: (auto-populated from login)\n- grievanceId: Valid grievance ID for testing\n- targetAdminId: ADMIN002 (for redirect testing)\n\n**Test Results Summary:**\n✅ Admin Authentication - Working\n✅ Create Tracking Entries (NEW, PENDING, IN_PROGRESS, RESOLVED) - Working\n✅ Get Tracking History - Working  \n✅ Get Current Status - Working\n✅ Redirect Grievance - Working with valid admin\n✅ Error Handling - Proper 404 for invalid grievance/admin IDs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "tracking-api-updated-v1",
+    "version": {
+      "major": 1,
+      "minor": 1,
+      "patch": 0
+    }
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@dseu.ac.in",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword", 
+      "value": "admin123",
+      "type": "string"
+    },
+    {
+      "key": "grievanceId",
+      "value": "GRV-2025-709813",
+      "type": "string"
+    },
+    {
+      "key": "targetAdminId",
+      "value": "ADMIN002",
+      "type": "string"
+    },
+    {
+      "key": "currentAdminId",
+      "value": "ADMIN001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login successful', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Token received', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('token');",
+                  "    pm.collectionVariables.set('adminToken', response.token);",
+                  "    console.log('Admin token set for collection');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tracking Entry Management",
+      "item": [
+        {
+          "name": "Create Tracking Entry - NEW Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Tracking entry created successfully', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response.data).to.have.property('tracking');",
+                  "    pm.expect(response.data.tracking).to.have.property('id');",
+                  "    pm.expect(response.data.tracking).to.have.property('adminStatus', 'NEW');",
+                  "    pm.expect(response.data.tracking).to.have.property('studentStatus', 'SUBMITTED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grievanceId\": \"{{grievanceId}}\",\n  \"responseText\": \"Grievance received and is being reviewed by our team. We will update you on the progress soon.\",\n  \"adminStatus\": \"NEW\",\n  \"studentStatus\": \"SUBMITTED\",\n  \"responseBy\": \"{{currentAdminId}}\",\n  \"isRedirect\": false,\n  \"hasAttachments\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tracking",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tracking"]
+            }
+          }
+        },
+        {
+          "name": "Create Tracking Entry - PENDING Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Pending status tracking created', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.tracking).to.have.property('adminStatus', 'PENDING');",
+                  "    pm.expect(response.data.tracking).to.have.property('studentStatus', 'UNDER_REVIEW');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grievanceId\": \"{{grievanceId}}\",\n  \"responseText\": \"Your grievance is currently under review. We are gathering information and will provide an update within 2-3 business days.\",\n  \"adminStatus\": \"PENDING\",\n  \"studentStatus\": \"UNDER_REVIEW\",\n  \"responseBy\": \"{{currentAdminId}}\",\n  \"isRedirect\": false,\n  \"hasAttachments\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tracking",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tracking"]
+            }
+          }
+        },
+        {
+          "name": "Create Tracking Entry - IN PROGRESS Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('In progress status tracking created', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.tracking).to.have.property('studentStatus', 'IN_PROGRESS');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grievanceId\": \"{{grievanceId}}\",\n  \"responseText\": \"We have started working on your grievance. The relevant department has been contacted and we are actively pursuing a resolution.\",\n  \"adminStatus\": \"PENDING\",\n  \"studentStatus\": \"IN_PROGRESS\",\n  \"responseBy\": \"{{currentAdminId}}\",\n  \"isRedirect\": false,\n  \"hasAttachments\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tracking",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tracking"]
+            }
+          }
+        },
+        {
+          "name": "Create Tracking Entry - RESOLVED Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Resolved status tracking created', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.tracking).to.have.property('adminStatus', 'RESOLVED');",
+                  "    pm.expect(response.data.tracking).to.have.property('studentStatus', 'RESOLVED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grievanceId\": \"{{grievanceId}}\",\n  \"responseText\": \"Your grievance has been successfully resolved. The issue has been addressed and appropriate actions have been taken. If you have any further concerns, please feel free to submit a new grievance.\",\n  \"adminStatus\": \"RESOLVED\",\n  \"studentStatus\": \"RESOLVED\",\n  \"responseBy\": \"{{currentAdminId}}\",\n  \"isRedirect\": false,\n  \"hasAttachments\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tracking",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tracking"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Grievance Redirection",
+      "item": [
+        {
+          "name": "Redirect Grievance to Another Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Redirection successful', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response.data).to.have.property('adminStatus', 'REDIRECTED');",
+                  "    pm.expect(response.data).to.have.property('redirectTo', pm.collectionVariables.get('targetAdminId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"redirectTo\": \"{{targetAdminId}}\",\n  \"comment\": \"Redirecting this grievance to the concerned department admin who has specialized knowledge in this area. This will ensure faster and more accurate resolution of the issue.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tracking/redirect/{{grievanceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tracking", "redirect", "{{grievanceId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Redirect Tracking Entry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Redirect tracking entry created', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.tracking).to.have.property('adminStatus', 'REDIRECTED');",
+                  "    pm.expect(response.data.tracking).to.have.property('isRedirect', true);",
+                  "    pm.expect(response.data.tracking).to.have.property('redirectTo', pm.collectionVariables.get('targetAdminId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grievanceId\": \"{{grievanceId}}\",\n  \"responseText\": \"Your grievance has been redirected to the appropriate department for specialized handling. The concerned admin will review and respond to your case soon.\",\n  \"adminStatus\": \"REDIRECTED\",\n  \"studentStatus\": \"UNDER_REVIEW\",\n  \"responseBy\": \"{{currentAdminId}}\",\n  \"redirectTo\": \"{{targetAdminId}}\",\n  \"isRedirect\": true,\n  \"hasAttachments\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tracking",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tracking"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tracking History & Status",
+      "item": [
+        {
+          "name": "Get Complete Tracking History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Tracking history retrieved', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response.data.trackingHistory).to.have.property('entries');",
+                  "    pm.expect(response.data.trackingHistory).to.have.property('summary');",
+                  "    pm.expect(response.data.trackingHistory.entries).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('History entries have required fields', () => {",
+                  "    const response = pm.response.json();",
+                  "    const entries = response.data.trackingHistory.entries;",
+                  "    if (entries.length > 0) {",
+                  "        const entry = entries[0];",
+                  "        pm.expect(entry).to.have.property('id');",
+                  "        pm.expect(entry).to.have.property('responseText');",
+                  "        pm.expect(entry).to.have.property('adminStatus');",
+                  "        pm.expect(entry).to.have.property('studentStatus');",
+                  "        pm.expect(entry).to.have.property('responseBy');",
+                  "        pm.expect(entry).to.have.property('responseAt');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tracking/{{grievanceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tracking", "{{grievanceId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Current Tracking Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Current status retrieved', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response.data).to.have.property('grievanceId', pm.collectionVariables.get('grievanceId'));",
+                  "    pm.expect(response.data).to.have.property('currentStatus');",
+                  "    pm.expect(response.data.currentStatus).to.have.property('adminStatus');",
+                  "    pm.expect(response.data.currentStatus).to.have.property('studentStatus');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tracking/{{grievanceId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tracking", "{{grievanceId}}", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Handling Tests",
+      "item": [
+        {
+          "name": "Get Tracking for Invalid Grievance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error response structure', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('errorCode', 'GRIEVANCE_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tracking/GRV-2099-999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tracking", "GRV-2099-999999"]
+            }
+          }
+        },
+        {
+          "name": "Redirect to Invalid Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Target admin not found error', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response.message.toLowerCase()).to.include('not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"redirectTo\": \"ADMIN999\",\n  \"comment\": \"Testing redirect to invalid admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tracking/redirect/{{grievanceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tracking", "redirect", "{{grievanceId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Tracking Entry Without Auth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', () => {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Authentication required error', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response.message).to.include('JWT_TOKEN_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grievanceId\": \"{{grievanceId}}\",\n  \"responseText\": \"Test without authentication\",\n  \"adminStatus\": \"NEW\",\n  \"studentStatus\": \"SUBMITTED\",\n  \"responseBy\": \"{{currentAdminId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tracking",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tracking"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
